@@ -1,22 +1,30 @@
-import { TextInput, PasswordInput, Paper, Title, Container, Button, Text } from '@mantine/core';
-import { useState } from 'react';
+import {
+  TextInput,
+  PasswordInput,
+  Paper,
+  Title,
+  Container,
+  Button,
+  Text,
+} from "@mantine/core";
+import { useState } from "react";
 
 export default function Login({ onLogin }) {
-  const [nombre, setNombre] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [nombre, setNombre] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/usuario/login', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/api/usuario/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ nombre, password }),
       });
@@ -31,7 +39,7 @@ export default function Login({ onLogin }) {
         setError(data.message);
       }
     } catch {
-      setError('No se pudo conectar con el servidor');
+      setError("No se pudo conectar con el servidor");
     } finally {
       setLoading(false);
     }
@@ -40,20 +48,20 @@ export default function Login({ onLogin }) {
   return (
     <Container size={420} my={40}>
       <Title ta="center">Panel de Acceso</Title>
-      
+
       <Paper withBorder shadow="md" p={30} mt={30} radius="md">
         <form onSubmit={handleSubmit}>
-          <TextInput 
-            label="Usuario" 
-            placeholder="Tu nombre de usuario" 
-            required 
+          <TextInput
+            label="Usuario"
+            placeholder="Tu nombre de usuario"
+            required
             value={nombre}
             onChange={(e) => setNombre(e.currentTarget.value)}
           />
-          <PasswordInput 
-            label="Contraseña" 
-            placeholder="Tu contraseña" 
-            required 
+          <PasswordInput
+            label="Contraseña"
+            placeholder="Tu contraseña"
+            required
             mt="md"
             value={password}
             onChange={(e) => setPassword(e.currentTarget.value)}

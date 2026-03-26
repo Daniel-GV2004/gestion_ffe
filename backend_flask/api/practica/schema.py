@@ -8,7 +8,6 @@ class PracticaSchema(Schema):
         # las ignore en lugar de dar error.
         unknown = EXCLUDE 
 
-    # Ajusta estos nombres a lo que creas que tendrá el Excel
     alumno = fields.Str(data_key="alumno")
     empresa = fields.Str(data_key="empresa")
     fecha_inicio = fields.Date(data_key="fecha inicio")
