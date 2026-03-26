@@ -1,0 +1,47 @@
+/* App.css */
+body { margin: 0; font-family: sans-serif; }
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  background-color: #121212; /* Fondo oscuro */
+  color: white;
+}
+
+.sidebar {
+  width: 240px;
+  background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333;
+}
+
+.logo {
+  padding: 30px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #646cff;
+  text-align: center;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  padding: 15px 25px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: 0.2s;
+}
+
+.nav-btn:hover {
+  background-color: #2a2a2a;
+  color: white;
+}
+
+.content {
+  flex: 1;
+  padding: 40px;
+  background-color: #121212;
+}

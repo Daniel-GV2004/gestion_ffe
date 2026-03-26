@@ -1,0 +1,3 @@
+backend_flask/.venv
+**/__pycache__/
+frontend/node_modules/
