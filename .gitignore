@@ -1,3 +1,22 @@
-backend_flask/.venv
+# --- Entornos y Dependencias ---
+backend_flask/.venv/
+**/node_modules/
 **/__pycache__/
-frontend/node_modules/
+
+# --- Frontend ---
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# --- Variables de Entorno (SEGURIDAD) ---
+**/.env
+**/.env.local
+
+# --- IDEs y Sistema ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log

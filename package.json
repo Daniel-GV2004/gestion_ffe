@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@mantine/form": "^8.3.18",
+    "@tabler/icons-react": "^3.41.0"
+  }
+}

@@ -1,39 +1,40 @@
-import { NavLink, Stack } from '@mantine/core';
-import { useState } from 'react';
-// 1. IMPORTA el componente y los iconos específicos que necesites
+import { NavLink as MantineNavLink, Stack } from '@mantine/core';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faHouse, 
-  faGraduationCap, // En lugar de faUserGraduation
+  faGraduationCap, 
   faBuilding, 
   faBriefcase, 
-  faDatabase 
+  faDatabase,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-export default function Navbar({ setSeccion }) {
-  const [active, setActive] = useState(0);
+export default function Navbar({ toggle }) {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // 2. Define los iconos como objetos, no como strings
-    const datos = [
-    { label: 'Inicio', icon: faHouse },
-    { label: 'Alumnos', icon: faGraduationCap }, // Actualizado aquí también
-    { label: 'Empresas', icon: faBuilding },
-    { label: 'Practicas', icon: faBriefcase },
-    { label: 'Repositorio', icon: faDatabase },
-    ];
+  const datos = [
+    { label: 'Inicio', icon: faHouse, path: '/' },
+    { label: 'Usuarios', icon: faUsers, path: '/usuarios' },
+    { label: 'Alumnos', icon: faGraduationCap, path: '/alumnos' },
+    { label: 'Empresas', icon: faBuilding, path: '/empresas' },
+    { label: 'Practicas', icon: faBriefcase, path: '/practicas' },
+    { label: 'Repositorio', icon: faDatabase, path: '/repositorio' },
+  ];
 
   return (
     <Stack gap="xs">
-      {datos.map((item, index) => (
-        <NavLink
+      {datos.map((item) => (
+        <MantineNavLink
           key={item.label}
-          active={index === active}
+          active={location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path))}
           label={item.label}
-          // 3. Renderiza el icono usando leftSection
           leftSection={<FontAwesomeIcon icon={item.icon} size="lg" />}
           onClick={() => {
-            setActive(index);
-            setSeccion(item.label);
+            navigate(item.path);
+            if (toggle) toggle(); // Cerrar el menú en móvil si toggle está definido
           }}
           variant="filled"
         />
