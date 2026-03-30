@@ -4,6 +4,7 @@ class EmpresaSchema(Schema):
     class Meta:
         unknown = EXCLUDE 
 
+    id = fields.Str(attribute="id")
     cif = fields.Str(required=True)
     nombre_empresa = fields.Str(required=True)
     email = fields.Email(required=True)

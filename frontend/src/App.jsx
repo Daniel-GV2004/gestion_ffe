@@ -15,12 +15,15 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import Alumnos from "./pages/Alumno/ListAlumno";
-import EditAlumno from "./pages/Alumno/EditAlumno"; // Usaremos este para "Nuevo"
+import EditAlumno from "./pages/Alumno/EditAlumno";
 import Empresas from "./pages/Empresa/ListEmpresa";
 import EditEmpresa from "./pages/Empresa/EditEmpresa";
-import Practicas from "./pages/Practica";
+import Practicas from "./pages/Practica/ListPractica";
+import EditPractica from "./pages/Practica/EditPractica";
 import Usuarios from "./pages/Usuario/ListUsuario";
 import EditUsuario from "./pages/Usuario/EditUsuario";
+import ListRepositorio from "./pages/Repositorio/ListRepositorio";
+import EditRepositorio from "./pages/Repositorio/EditRepositorio";
 
 function App() {
   const [opened, { toggle }] = useDisclosure();
@@ -109,6 +112,14 @@ function App() {
 
             {/* Rutas de Prácticas */}
             <Route path="/practicas" element={<Practicas />} />
+            <Route path="/practicas/nueva" element={<EditPractica />} />
+
+            {/* Rutas de Repositorio */}
+            <Route path="/documentos" element={<ListRepositorio />} />
+            <Route
+              path="/documentos/editar/:docId"
+              element={<EditRepositorio />}
+            />
 
             {/* Redirección por defecto si la ruta no existe */}
             <Route path="*" element={<Navigate to="/" />} />

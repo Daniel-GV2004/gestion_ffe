@@ -2,97 +2,73 @@ import { useState, useEffect } from "react";
 import {
   Table,
   ScrollArea,
-  Loader,
-  Center,
   Title,
-  Text,
   Container,
   Button,
   Group,
 } from "@mantine/core";
-import { IconUserPlus } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
+import { IconPlus } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom"; // <-- Importamos useNavigate
 
 export default function ListPractica() {
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // <-- Inicializamos el hook
 
-  const fetchPracticas = () => {
+  const fetchData = async () => {
     setLoading(true);
-    fetch("http://127.0.0.1:5000/api/practica/practicas")
-      .then((res) => res.json())
-      .then((data) => {
-        setDatos(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error cargando practicas:", err);
-        setLoading(false);
-      });
+    try {
+      const resP = await fetch("http://127.0.0.1:5000/api/practica/practicas");
+      const dataP = await resP.json();
+      setDatos(Array.isArray(dataP) ? dataP : []);
+    } catch (err) {
+      console.error("Error cargando datos:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchPracticas();
+    fetchData();
   }, []);
 
-  if (loading && datos.length === 0) {
-    return (
-      <Center style={{ height: "50vh" }}>
-        <Loader size="xl" color="blue" />
-      </Center>
-    );
-  }
-
-  const columnas = ["alumno_nif", "empresa_cif", "fecha_inicio", "fecha_fin"];
-
-  const ths = (
-    <Table.Tr>
-      {columnas.map((col) => (
-        <Table.Th key={col} style={{ textTransform: "uppercase" }}>
-          {col.replace(/_/g, " ")}
-        </Table.Th>
-      ))}
-    </Table.Tr>
-  );
-
-  const rows = datos.map((practica, index) => (
-    <Table.Tr key={index}>
-      {columnas.map((col) => (
-        <Table.Td key={col}>
-          {practica[col] ? practica[col].toString() : "-"}
-        </Table.Td>
-      ))}
-    </Table.Tr>
-  ));
+  const columnas = ["alumno", "empresa", "fecha_inicio", "fecha_fin"];
 
   return (
     <Container size="xl" py="xl">
       <Group justify="space-between" mb="xl">
-        <div>
-          <Title order={2}>Gestión de Prácticas</Title>
-        </div>
-
+        <Title order={2}>Gestión de Prácticas</Title>
         <Button
-          leftSection={<IconUserPlus size={18} />}
-          onClick={() => navigate("/practicas/nueva")}
-          variant="filled"
-          color="blue"
+          leftSection={<IconPlus size={18} />}
+          onClick={() => navigate("/practicas/nueva")} // <-- Redirigimos a la nueva ruta
         >
-          Nueva Práctica
+          Asignar Práctica
         </Button>
       </Group>
 
       <ScrollArea shadow="xs">
         <Table striped highlightOnHover withTableBorder>
-          <Table.Thead>{ths}</Table.Thead>
+          <Table.Thead>
+            <Table.Tr>
+              {columnas.map((col) => (
+                <Table.Th key={col}>{col.replace(/_/g, " ")}</Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
           <Table.Tbody>
-            {rows.length > 0 ? (
-              rows
+            {datos.length > 0 ? (
+              datos.map((p, i) => (
+                <Table.Tr key={i}>
+                  <Table.Td>{p.alumno_nombre || p.alumno}</Table.Td>
+                  <Table.Td>{p.empresa_nombre || p.empresa}</Table.Td>
+                  <Table.Td>{p.fecha_inicio}</Table.Td>
+                  <Table.Td>{p.fecha_fin}</Table.Td>
+                </Table.Tr>
+              ))
             ) : (
               <Table.Tr>
                 <Table.Td colSpan={columnas.length} align="center">
-                  No hay prácticas registradas
+                  No hay datos
                 </Table.Td>
               </Table.Tr>
             )}

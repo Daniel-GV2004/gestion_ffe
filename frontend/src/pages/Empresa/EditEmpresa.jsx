@@ -152,13 +152,13 @@ export default function EditEmpresa() {
               label="Persona de Contacto"
               placeholder="Nombre del CEO / RRHH"
               {...form.getInputProps("nombre_contacto")}
-              gridColumn="span 2"
+              style={{ gridColumn: "span 2" }}
             />
             <TextInput
               label="Dirección Física"
               placeholder="Calle Mayor 1"
               {...form.getInputProps("direccion")}
-              gridColumn="span 2"
+              style={{ gridColumn: "span 2" }}
             />
           </SimpleGrid>
 
@@ -180,7 +180,7 @@ export default function EditEmpresa() {
               label="Email Tutor"
               placeholder="maria@tech.com"
               {...form.getInputProps("email_tutor_empresa")}
-              gridColumn="span 2"
+              style={{ gridColumn: "span 2" }}
             />
           </SimpleGrid>
 
