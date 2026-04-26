@@ -9,8 +9,9 @@ import {
   Container,
   Button,
   Group,
+  ActionIcon,
 } from "@mantine/core";
-import { IconUserPlus } from "@tabler/icons-react";
+import { IconUserPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Usuarios() {
@@ -48,6 +49,7 @@ export default function Usuarios() {
 
   const ths = (
     <Table.Tr>
+      <Table.Th style={{ width: 50 }}></Table.Th>
       {columnas.map((col) => (
         <Table.Th key={col} style={{ textTransform: "uppercase" }}>
           {col.replace(/_/g, " ")}
@@ -56,15 +58,28 @@ export default function Usuarios() {
     </Table.Tr>
   );
 
-  const rows = datos.map((usuario, index) => (
-    <Table.Tr key={index}>
-      {columnas.map((col) => (
-        <Table.Td key={col}>
-          {usuario[col] ? usuario[col].toString() : "-"}
+  const rows = datos.map((usuario, index) => {
+    const userId = usuario._id?.$oid || usuario._id || usuario.id;
+
+    return (
+      <Table.Tr key={userId || index}>
+        <Table.Td>
+          <ActionIcon
+            variant="subtle"
+            color="blue"
+            onClick={() => navigate(`/usuarios/editar/${userId}`)}
+          >
+            <IconEdit size={20} stroke={1.5} />
+          </ActionIcon>
         </Table.Td>
-      ))}
-    </Table.Tr>
-  ));
+        {columnas.map((col) => (
+          <Table.Td key={col}>
+            {usuario[col] ? usuario[col].toString() : "-"}
+          </Table.Td>
+        ))}
+      </Table.Tr>
+    );
+  });
 
   return (
     <Container size="xl" py="xl">
@@ -94,7 +109,7 @@ export default function Usuarios() {
               rows
             ) : (
               <Table.Tr>
-                <Table.Td colSpan={columnas.length} align="center">
+                <Table.Td colSpan={columnas.length + 1} align="center">
                   No hay usuarios registrados
                 </Table.Td>
               </Table.Tr>

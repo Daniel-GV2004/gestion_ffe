@@ -1,10 +1,11 @@
-from mongoengine import Document, ReferenceField, DateTimeField, IntField, StringField, EmailField
+from mongoengine import Document, ReferenceField, DateTimeField, IntField, StringField, EmailField, ListField
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class Usuario(Document):
     nombre = StringField(required=True, unique=True, max_length=100)
     password = StringField(required=True)
+    grados = ListField(StringField(), required=True)
 
     meta = {'collection': 'usuarios'}
 
@@ -15,8 +16,8 @@ class Usuario(Document):
         return check_password_hash(self.password, password)
 
     @classmethod
-    def crear(cls, nombre, password):
-        nuevo_usuario = cls(nombre=nombre)
+    def crear(cls, nombre, password, grados):
+        nuevo_usuario = cls(nombre=nombre, grados=grados)
         nuevo_usuario.set_password(password)
         nuevo_usuario.save()
         return nuevo_usuario

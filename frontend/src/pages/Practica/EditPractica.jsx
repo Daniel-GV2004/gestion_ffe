@@ -9,15 +9,23 @@ import {
   Container,
   Title,
   Paper,
+  Center,
+  Loader,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { notifications } from "@mantine/notifications";
+import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
 
 export default function EditPractica() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditing = Boolean(id); // Detecta si estamos creando o editando
 
   const [opcionesAlumnos, setOpcionesAlumnos] = useState([]);
   const [opcionesEmpresas, setOpcionesEmpresas] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const hoy = new Date();
   const añoActual = hoy.getFullYear();
@@ -38,97 +46,219 @@ export default function EditPractica() {
     },
   });
 
-useEffect(() => {
-  const fetchOpciones = async () => {
-    try {
-      // --- ALUMNOS ---
-      const resA = await fetch("http://127.0.0.1:5000/api/alumno/alumnos");
-      const dataA = await resA.json();
+  useEffect(() => {
+    const cargarTodo = async () => {
+      setLoadingData(true);
+      try {
+        // 1. Descargamos Alumnos y Empresas a la vez para que sea más rápido
+        const [resA, resE] = await Promise.all([
+          fetch("http://127.0.0.1:5000/api/alumno/alumnos"),
+          fetch("http://127.0.0.1:5000/api/empresa/empresas"),
+        ]);
 
-      const arrayAlumnos = Array.isArray(dataA)
-        ? dataA
-        : dataA.alumnos || dataA.data || [];
+        const dataA = await resA.json();
+        const dataE = await resE.json();
 
-      setOpcionesAlumnos(
-        arrayAlumnos
-          .map((a) => {
-            // Extraemos el ID real de Mongo.
-            // Manejamos si Flask lo envía como a._id.$oid, a._id normal, o a.id
-            const mongoId = a._id?.$oid || a._id || a.id;
+        // Procesar Alumnos
+        const arrayAlumnos = Array.isArray(dataA) ? dataA : dataA.alumnos || [];
+        setOpcionesAlumnos(
+          arrayAlumnos
+            .map((a) => {
+              const mongoId = a._id?.$oid || a._id || a.id;
+              return {
+                value: String(mongoId),
+                label:
+                  `${a.nombre || ""} ${a.apellidos || ""} - ${a.nif || ""}`.trim(),
+              };
+            })
+            .filter((op) => op.value !== "undefined" && op.value !== "null"),
+        );
 
-            return {
-              value: String(mongoId), // <-- ESTO se enviará a tu backend (ej: "651a2b...")
-              label:
-                `${a.nombre || ""} ${a.apellidos || ""} - ${a.nif || ""}`.trim(), // <-- ESTO ve el usuario
+        // Procesar Empresas
+        const arrayEmpresas = Array.isArray(dataE)
+          ? dataE
+          : dataE.empresas || [];
+        setOpcionesEmpresas(
+          arrayEmpresas
+            .map((e) => {
+              const mongoId = e._id?.$oid || e._id || e.id;
+              return {
+                value: String(mongoId),
+                label:
+                  `${e.nombre_empresa || e.nombre || "Empresa sin nombre"} - ${e.cif || "Sin CIF"}`.trim(),
+              };
+            })
+            .filter((op) => op.value !== "undefined" && op.value !== "null"),
+        );
+
+        // 2. Si estamos en MODO EDICIÓN, descargamos los datos de la práctica
+        if (isEditing) {
+          const resP = await fetch(
+            `http://127.0.0.1:5000/api/practica/practicas/${id}`,
+          );
+          const dataP = await resP.json();
+
+          if (!dataP.error) {
+            const extraerId = (campo) => {
+              if (!campo) return "";
+              // Si es un objeto, intentamos sacar su ID de las formas habituales en Mongo/Flask
+              if (typeof campo === "object") {
+                return String(campo.id || campo._id?.$oid || campo._id || "");
+              }
+              // Si ya es un texto (string), lo devolvemos tal cual
+              return String(campo);
             };
-          })
-          // Filtramos por si algún alumno viene corrupto sin ID de Mongo
-          .filter(
-            (opcion) => opcion.value !== "undefined" && opcion.value !== "null",
-          ),
-      );
 
-      // --- EMPRESAS ---
-      const resE = await fetch("http://127.0.0.1:5000/api/empresa/empresas");
-      const dataE = await resE.json();
+            const idAlumno = extraerId(dataP.alumno);
+            const idEmpresa = extraerId(dataP.empresa);
 
-      const arrayEmpresas = Array.isArray(dataE)
-        ? dataE
-        : dataE.empresas || dataE.data || [];
+            // Formatear fechas para que el input type="date" las entienda (YYYY-MM-DD)
+            const formatoFecha = (fecha) =>
+              fecha ? new Date(fecha).toISOString().substring(0, 10) : "";
 
-      setOpcionesEmpresas(
-        arrayEmpresas
-          .map((e) => {
-            const mongoId = e._id?.$oid || e._id || e.id;
+            form.setValues({
+              alumno: idAlumno,
+              empresa: idEmpresa,
+              fecha_inicio: formatoFecha(dataP.fecha_inicio),
+              fecha_fin: formatoFecha(dataP.fecha_fin),
+              horas_totales: dataP.horas_totales || 0,
+              ciclo: dataP.ciclo || "",
+              curso: dataP.curso || "",
+              y_academico: dataP.y_academico || "",
+            });
+          } else {
+            notifications.show({
+              title: "Error",
+              message: "No se pudo cargar la práctica",
+              color: "red",
+              icon: <IconX />,
+            });
+          }
+        }
+      } catch (error) {
+        notifications.show({
+          title: "Error de conexión",
+          message: "Error al descargar datos",
+          color: "red",
+          icon: <IconX />,
+        });
+      } finally {
+        setLoadingData(false);
+      }
+    };
 
-            return {
-              value: String(mongoId), // <-- El ID de Mongo de la empresa
-              label:
-                `${e.nombre_empresa || e.nombre || "Empresa sin nombre"} - ${e.cif || "Sin CIF"}`.trim(),
-            };
-          })
-          .filter(
-            (opcion) => opcion.value !== "undefined" && opcion.value !== "null",
-          ),
-      );
-    } catch (error) {
-      console.error("Error cargando opciones:", error);
-    }
-  };
+    cargarTodo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isEditing]);
 
-  fetchOpciones();
-}, []);
-
-  const guardarPractica = async (values) => {
+  const handleSubmit = async (values) => {
+    setLoadingSubmit(true);
     try {
-      const response = await fetch(
-        "http://127.0.0.1:5000/api/practica/practicas",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
-        },
-      );
+      const url = isEditing
+        ? `http://127.0.0.1:5000/api/practica/practicas/${id}`
+        : "http://127.0.0.1:5000/api/practica/practicas";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
 
       if (response.ok) {
-        navigate("/practicas");
+        notifications.show({
+          title: "¡Éxito!",
+          message: isEditing
+            ? "Práctica actualizada"
+            : "Práctica asignada correctamente",
+          color: "teal",
+          icon: <IconCheck />,
+        });
+        setTimeout(() => navigate("/practicas"), 1500);
+      } else {
+        notifications.show({
+          title: "Error",
+          message: data.error || "Revisa los datos",
+          color: "red",
+          icon: <IconX />,
+        });
       }
     } catch (error) {
-      console.error("Error al guardar:", error);
+      notifications.show({
+        title: "Error",
+        message: "Error de conexión con el servidor",
+        color: "red",
+        icon: <IconX />,
+      });
+    } finally {
+      setLoadingSubmit(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!window.confirm("¿Seguro que quieres eliminar esta práctica?")) return;
+
+    setLoadingSubmit(true);
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/api/practica/practicas/${id}`,
+        { method: "DELETE" },
+      );
+      if (response.ok) {
+        notifications.show({
+          title: "Eliminada",
+          message: "Práctica eliminada correctamente",
+          color: "teal",
+          icon: <IconCheck />,
+        });
+        setTimeout(() => navigate("/practicas"), 1500);
+      } else {
+        notifications.show({
+          title: "Error",
+          message: "No se pudo eliminar",
+          color: "red",
+          icon: <IconX />,
+        });
+        setLoadingSubmit(false);
+      }
+    } catch (err) {
+      notifications.show({
+        title: "Error",
+        message: "Error de conexión",
+        color: "red",
+        icon: <IconX />,
+      });
+      setLoadingSubmit(false);
+    }
+  };
+
+  if (loadingData) {
+    return (
+      <Center style={{ height: "50vh" }}>
+        <Loader size="xl" color="blue" />
+      </Center>
+    );
+  }
 
   return (
     <Container size="sm" py="xl">
-      <Group justify="space-between" mb="lg">
-        <Title order={2}>Asignar Nueva Práctica</Title>
-        <Button variant="default" onClick={() => navigate("/practicas")}>
-          Volver
-        </Button>
-      </Group>
+      <Button
+        variant="subtle"
+        leftSection={<IconArrowLeft size={16} />}
+        onClick={() => navigate("/practicas")}
+        mb="md"
+      >
+        Volver al listado
+      </Button>
 
       <Paper withBorder shadow="md" p="xl" radius="md">
-        <form onSubmit={form.onSubmit(guardarPractica)}>
+        <Title order={2} mb="lg" align="center">
+          {isEditing ? "Editar Práctica" : "Asignar Nueva Práctica"}
+        </Title>
+
+        <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack>
             <Select
               label="Seleccionar Alumno"
@@ -170,21 +300,34 @@ useEffect(() => {
               {...form.getInputProps("horas_totales")}
             />
 
-            <TextInput
-              label="Ciclo"
-              placeholder="Escribe el ciclo"
-              {...form.getInputProps("ciclo")}
-            />
+            <Group grow>
+              <TextInput
+                label="Ciclo"
+                placeholder="Escribe el ciclo"
+                {...form.getInputProps("ciclo")}
+              />
+              <TextInput
+                label="Curso"
+                placeholder="Ej: Primero o Segundo"
+                {...form.getInputProps("curso")}
+              />
+            </Group>
 
-            <TextInput
-              label="Curso"
-              placeholder="Ej: Primero o Segundo"
-              {...form.getInputProps("curso")}
-            />
-
-            <Button type="submit" fullWidth mt="md">
-              Guardar Práctica
-            </Button>
+            <Group justify={isEditing ? "space-between" : "flex-end"} mt="xl">
+              {isEditing && (
+                <Button
+                  variant="outline"
+                  color="red"
+                  onClick={handleDelete}
+                  disabled={loadingSubmit}
+                >
+                  Eliminar
+                </Button>
+              )}
+              <Button type="submit" loading={loadingSubmit} color="blue">
+                {isEditing ? "Actualizar Práctica" : "Guardar Práctica"}
+              </Button>
+            </Group>
           </Stack>
         </form>
       </Paper>

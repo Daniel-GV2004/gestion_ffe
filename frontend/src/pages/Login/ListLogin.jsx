@@ -9,10 +9,15 @@ import {
   Button,
   Notification,
   Box,
+  Group,
+  Anchor,
 } from "@mantine/core";
 import { IconLock, IconUser, IconX } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom"; // <-- Importamos useNavigate
 
 export default function Login({ onLogin }) {
+  const navigate = useNavigate(); // <-- Inicializamos el hook de navegación
+
   // Estados para controlar los inputs
   const [nombre, setNombre] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +47,7 @@ export default function Login({ onLogin }) {
       const data = await response.json();
 
       if (response.ok) {
-        // Si el login es correcto, pasamos el nombre al estado global de App.jsx
+        // Si el login es correcto, pasamos el nombre (y los grados si los necesitas) al estado global
         onLogin(data.nombre);
       } else {
         // Si el backend devuelve un error (401, 404, etc.)
@@ -95,7 +100,7 @@ export default function Login({ onLogin }) {
               required
               leftSection={<IconUser size={16} />}
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)} // Corregido: e.target.value
+              onChange={(e) => setNombre(e.target.value)}
             />
 
             <PasswordInput
@@ -105,7 +110,7 @@ export default function Login({ onLogin }) {
               mt="md"
               leftSection={<IconLock size={16} />}
               value={password}
-              onChange={(e) => setPassword(e.target.value)} // Corregido: e.target.value
+              onChange={(e) => setPassword(e.target.value)}
             />
 
             <Button

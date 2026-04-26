@@ -9,8 +9,9 @@ import {
   Container,
   Button,
   Group,
+  ActionIcon, // Añadido para el botón
 } from "@mantine/core";
-import { IconBuildingPlus } from "@tabler/icons-react";
+import { IconBuildingPlus, IconEdit } from "@tabler/icons-react"; // Añadido IconEdit
 import { useNavigate } from "react-router-dom";
 
 export default function ListEmpresa() {
@@ -47,18 +48,11 @@ export default function ListEmpresa() {
     "nombre_contacto",
   ];
 
-  const rows = datos.map((empresa, index) => (
-    <Table.Tr key={index}>
-      {columnas.map((col, i) => (
-        <Table.Td key={i}>
-          {empresa[col] ? empresa[col].toString() : "-"}
-        </Table.Td>
-      ))}
-    </Table.Tr>
-  ));
-
+  // CABECERA DE LA TABLA
   const ths = (
     <Table.Tr>
+      <Table.Th style={{ width: 50 }}></Table.Th>{" "}
+      {/* Espacio para el botón de editar */}
       {columnas.map((col) => (
         <Table.Th key={col} style={{ textTransform: "capitalize" }}>
           {col.replace(/_/g, " ")}
@@ -66,6 +60,34 @@ export default function ListEmpresa() {
       ))}
     </Table.Tr>
   );
+
+  // FILAS DE LA TABLA
+  const rows = datos.map((empresa) => {
+    // Rescatamos el ID de la empresa
+    const empresaId = empresa.id || empresa._id?.$oid || empresa._id;
+
+    return (
+      <Table.Tr key={empresaId || empresa.cif}>
+        {/* Celda del botón Editar */}
+        <Table.Td>
+          <ActionIcon
+            variant="subtle"
+            color="blue"
+            onClick={() => navigate(`/empresas/editar/${empresaId}`)}
+          >
+            <IconEdit size={20} stroke={1.5} />
+          </ActionIcon>
+        </Table.Td>
+
+        {/* Celdas de datos */}
+        {columnas.map((col) => (
+          <Table.Td key={col}>
+            {empresa[col] ? empresa[col].toString() : "-"}
+          </Table.Td>
+        ))}
+      </Table.Tr>
+    );
+  });
 
   return (
     <Container size="xl" py="xl">
@@ -76,7 +98,7 @@ export default function ListEmpresa() {
 
         <Button
           leftSection={<IconBuildingPlus size={18} />}
-          onClick={() => navigate("/empresas/nueva")}
+          onClick={() => navigate("/empresas/nueva")} // Asegúrate de que esta ruta coincida con tu App.jsx (puede ser /nuevo)
           variant="filled"
           color="blue"
         >
@@ -92,7 +114,8 @@ export default function ListEmpresa() {
               rows
             ) : (
               <Table.Tr>
-                <Table.Td colSpan={columnas.length} align="center">
+                {/* Le sumamos 1 al colSpan por la nueva columna del lápiz */}
+                <Table.Td colSpan={columnas.length + 1} align="center">
                   No hay empresas registradas
                 </Table.Td>
               </Table.Tr>

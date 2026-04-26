@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request
 from .schema import practica_schema, practicas_schema 
 from core.models import Practica, Alumno, Empresa
 from bson import ObjectId
+from bson.errors import InvalidId
+from mongoengine.errors import ValidationError
 
 bp = Blueprint('practica', __name__)
 
@@ -12,8 +14,9 @@ def get_practicas():
     result = []
     for p in practicas:
         item = practica_schema.dump(p)
-        item['alumno'] = f"{p.alumno.nombre} {p.alumno.apellidos}"
-        item['empresa'] = p.empresa.nombre_empresa
+        item['alumno'] = f"{p.alumno.nombre} {p.alumno.apellidos}" if p.alumno else "Sin Alumno"
+        item['empresa'] = p.empresa.nombre_empresa if p.empresa else "Sin Empresa"
+        item['id'] = str(p.id) 
         result.append(item)
         
     return jsonify(result), 200
@@ -39,4 +42,59 @@ def create_practica():
         
     except Exception as e:
         print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
+
+@bp.route('/practicas/<id>', methods=['GET'])
+def get_practica(id):
+    try:
+        practica = Practica.objects(id=id).first()
+        if not practica:
+            return jsonify({"error": "Práctica no encontrada"}), 404
+            
+        data = practica_schema.dump(practica)
+        
+        data['id'] = str(practica.id)
+        data['alumno'] = str(practica.alumno.id) if practica.alumno else ""
+        data['empresa'] = str(practica.empresa.id) if practica.empresa else ""
+
+        return jsonify(data), 200
+    except (InvalidId, ValidationError):
+        return jsonify({"error": "ID de práctica inválido"}), 400
+
+
+@bp.route('/practicas/<id>', methods=['PUT'])
+def update_practica(id):
+    try:
+        practica = Practica.objects(id=id).first()
+        if not practica:
+            return jsonify({"error": "Práctica no encontrada"}), 404
+
+        data = request.get_json()
+        
+        for key, value in data.items():
+            if key not in ['id', '_id']:
+                if key in ['alumno', 'empresa'] and value:
+                    setattr(practica, key, ObjectId(value))
+                else:
+                    setattr(practica, key, value)
+            
+        practica.save()
+        return jsonify({"mensaje": "Práctica actualizada correctamente"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route('/practicas/<id>', methods=['DELETE'])
+def delete_practica(id):
+    try:
+        practica = Practica.objects(id=id).first()
+        if not practica:
+            return jsonify({"error": "Práctica no encontrada"}), 404
+            
+        practica.delete()
+        return jsonify({"mensaje": "Práctica eliminada correctamente"}), 200
+    except (InvalidId, ValidationError):
+        return jsonify({"error": "ID de práctica inválido"}), 400
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 from .schema import empresa_schema, empresas_schema 
 from core.models import Empresa
 from mongoengine.errors import ValidationError
+from bson.errors import InvalidId
 
 bp = Blueprint('empresa', __name__)
 
@@ -40,26 +41,49 @@ def create_empresa():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@bp.route('/empresas/<id>', methods=['GET'])
+def get_empresa(id):
+    try:
+        empresa = Empresa.objects(id=id).first()
+        if not empresa:
+            return jsonify({"error": "Empresa no encontrada"}), 404
+            
+        return jsonify(empresa_schema.dump(empresa)), 200
+    except (InvalidId, ValidationError):
+        return jsonify({"error": "ID de empresa inválido"}), 400
+
+
+@bp.route('/empresas/<id>', methods=['PUT'])
+def update_empresa(id):
+    try:
+        empresa = Empresa.objects(id=id).first()
+        if not empresa:
+            return jsonify({"error": "Empresa no encontrada"}), 404
+
+        data = request.get_json()
+        
+        # Actualizamos dinámicamente cualquier campo que nos mande el frontend
+        for key, value in data.items():
+            # Evitamos sobreescribir el ID por accidente
+            if key not in ['id', '_id']:
+                setattr(empresa, key, value)
+            
+        empresa.save()
+        return jsonify({"mensaje": "Empresa actualizada correctamente"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 @bp.route('/empresas/<id>', methods=['DELETE'])
 def delete_empresa(id):
     try:
         empresa = Empresa.objects(id=id).first()
-        
         if not empresa:
-            return jsonify({
-                "error": "Empresa no encontrada",
-                "id_buscado": id
-            }), 404
+            return jsonify({"error": "Empresa no encontrada"}), 404
             
-        nombre = empresa.nombre_empresa  # Guardamos el nombre antes de borrar
         empresa.delete()
-        
-        return jsonify({
-            "mensaje": f"Empresa '{nombre}' eliminada correctamente",
-            "id_eliminado": id
-        }), 200
-
-    except ValidationError:
-        return jsonify({"error": "El ID proporcionado no es válido"}), 400
+        return jsonify({"mensaje": "Empresa eliminada correctamente"}), 200
+    except (InvalidId, ValidationError):
+        return jsonify({"error": "ID de empresa inválido"}), 400
     except Exception as e:
-        return jsonify({"error": "Error interno del servidor", "detalle": str(e)}), 500
+        return jsonify({"error": str(e)}), 500

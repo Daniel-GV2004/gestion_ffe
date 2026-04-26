@@ -16,9 +16,12 @@
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@fortawesome/react-fontawesome": "^3.2.0",
     "@mantine/core": "^8.3.17",
+    "@mantine/dates": "^8.3.18",
     "@mantine/form": "^8.3.18",
     "@mantine/hooks": "^8.3.17",
+    "@mantine/notifications": "^8.3.18",
     "@tabler/icons-react": "^3.41.0",
+    "dayjs": "^1.11.20",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.2"

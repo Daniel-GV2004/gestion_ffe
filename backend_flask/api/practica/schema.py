@@ -4,6 +4,7 @@ class PracticaSchema(Schema):
     class Meta:
         unknown = EXCLUDE 
 
+    id = fields.String(attribute="id", dump_only=True)
     alumno = fields.Str(required=True)
     empresa = fields.Str(required=True)
     

@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "@mantine/dates": "^8.3.18",
-    "@mantine/form": "^8.3.18",
-    "@tabler/icons-react": "^3.41.0",
-    "dayjs": "^1.11.20"
-  }
-}

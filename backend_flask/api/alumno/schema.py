@@ -4,7 +4,7 @@ class AlumnoSchema(Schema):
     class Meta:
         unknown = EXCLUDE 
 
-    id = fields.Str(attribute="id")
+    id = fields.String(attribute="id", dump_only=True)
     nif = fields.Str(required=True) 
     nombre = fields.Str(required=True)
     apellidos = fields.Str(required=True)

@@ -5,17 +5,18 @@ import {
   Loader,
   Center,
   Title,
-  Text,
   Container,
   Button,
   Group,
+  ActionIcon,
 } from "@mantine/core";
-import { IconUserPlus } from "@tabler/icons-react";
+import { IconUserPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Alumnos() {
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scrolled, setScrolled] = useState(false); // Estado necesario para el onScrollPositionChange
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,6 +44,8 @@ export default function Alumnos() {
 
   const ths = (
     <Table.Tr>
+      <Table.Th style={{ width: 50 }}></Table.Th>{" "}
+      {/* Columna para el botón editar */}
       {columnas.map((col) => (
         <Table.Th key={col} style={{ textTransform: "uppercase" }}>
           {col.replace(/_/g, " ")}
@@ -51,15 +54,29 @@ export default function Alumnos() {
     </Table.Tr>
   );
 
-  const rows = datos.map((alumno) => (
-    <Table.Tr key={alumno.nif}>
-      {columnas.map((col) => (
-        <Table.Td key={col}>
-          {alumno[col] ? alumno[col].toString() : "-"}
+  const rows = datos.map((alumno) => {
+    // Rescatamos el ID seguro para la redirección
+    const alumnoId = alumno._id?.$oid || alumno._id || alumno.id;
+
+    return (
+      <Table.Tr key={alumnoId || alumno.nif}>
+        <Table.Td>
+          <ActionIcon
+            variant="subtle"
+            color="blue"
+            onClick={() => navigate(`/alumnos/editar/${alumnoId}`)}
+          >
+            <IconEdit size={20} stroke={1.5} />
+          </ActionIcon>
         </Table.Td>
-      ))}
-    </Table.Tr>
-  ));
+        {columnas.map((col) => (
+          <Table.Td key={col}>
+            {alumno[col] ? alumno[col].toString() : "-"}
+          </Table.Td>
+        ))}
+      </Table.Tr>
+    );
+  });
 
   return (
     <Container size="xl" py="xl">
@@ -68,7 +85,6 @@ export default function Alumnos() {
           <Title order={2}>Gestión de Alumnos</Title>
         </div>
 
-        {/* Botón para ir al formulario */}
         <Button
           leftSection={<IconUserPlus size={18} />}
           onClick={() => navigate("/alumnos/nuevo")}
@@ -90,7 +106,7 @@ export default function Alumnos() {
               rows
             ) : (
               <Table.Tr>
-                <Table.Td colSpan={columnas.length} align="center">
+                <Table.Td colSpan={columnas.length + 1} align="center">
                   No hay alumnos registrados
                 </Table.Td>
               </Table.Tr>

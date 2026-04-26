@@ -20,7 +20,7 @@ export default function Navbar({ toggle }) {
     { label: "Usuarios", icon: faUsers, path: "/usuarios" },
     { label: "Alumnos", icon: faGraduationCap, path: "/alumnos" },
     { label: "Empresas", icon: faBuilding, path: "/empresas" },
-    { label: "Practicas", icon: faBriefcase, path: "/practicas" },
+    { label: "Prácticas", icon: faBriefcase, path: "/practicas" },
     { label: "Repositorio", icon: faDatabase, path: "/repositorio" },
   ];
 

@@ -13,7 +13,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 // Importación de componentes y páginas
 import Navbar from "./components/Navbar";
-import Login from "./pages/Login";
+import ListLogin from "./pages/Login/ListLogin";
 import Alumnos from "./pages/Alumno/ListAlumno";
 import EditAlumno from "./pages/Alumno/EditAlumno";
 import Empresas from "./pages/Empresa/ListEmpresa";
@@ -23,16 +23,25 @@ import EditPractica from "./pages/Practica/EditPractica";
 import Usuarios from "./pages/Usuario/ListUsuario";
 import EditUsuario from "./pages/Usuario/EditUsuario";
 import ListRepositorio from "./pages/Repositorio/ListRepositorio";
-import EditRepositorio from "./pages/Repositorio/EditRepositorio";
+import IframeCaddie from "./components/IframeCaddie.jsx";
 
 function App() {
   const [opened, { toggle }] = useDisclosure();
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  // Gestión de sesión simple
+  // Gestión de sesión simple: cualquier intento de entrar sin usuario va al Login
   if (!user) {
-    return <Login onLogin={(nombre) => setUser({ name: nombre })} />;
+    return (
+      <Routes>
+        <Route
+          path="*"
+          element={
+            <ListLogin onLogin={(nombre) => setUser({ name: nombre })} />
+          }
+        />
+      </Routes>
+    );
   }
 
   const handleLogout = () => {
@@ -100,6 +109,7 @@ function App() {
             {/* Rutas de Usuarios */}
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/usuarios/nuevo" element={<EditUsuario />} />
+            <Route path="/usuarios/editar/:id" element={<EditUsuario />} />
 
             {/* Rutas de Alumnos */}
             <Route path="/alumnos" element={<Alumnos />} />
@@ -109,16 +119,17 @@ function App() {
             {/* Rutas de Empresas */}
             <Route path="/empresas" element={<Empresas />} />
             <Route path="/empresas/nueva" element={<EditEmpresa />} />
+            <Route path="/empresas/editar/:id" element={<EditEmpresa />} />
 
             {/* Rutas de Prácticas */}
             <Route path="/practicas" element={<Practicas />} />
             <Route path="/practicas/nueva" element={<EditPractica />} />
+            <Route path="/practicas/editar/:id" element={<EditPractica />} />
 
-            {/* Rutas de Repositorio */}
-            <Route path="/documentos" element={<ListRepositorio />} />
+            {/* --- REPOSITORIO (Recibiendo el nombre del profesor) --- */}
             <Route
-              path="/documentos/editar/:docId"
-              element={<EditRepositorio />}
+              path="/repositorio"
+              element={<ListRepositorio nombreProfesor={user.name} />}
             />
 
             {/* Redirección por defecto si la ruta no existe */}
