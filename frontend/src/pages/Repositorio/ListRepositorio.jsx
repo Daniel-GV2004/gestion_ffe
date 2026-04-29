@@ -15,6 +15,7 @@ import {
   Divider,
 } from "@mantine/core";
 import { IconFileDescription, IconFileExport } from "@tabler/icons-react";
+import IframeCaddie from "../../components/IframeCaddie";
 
 export default function ListRepositorio({ nombreProfesor }) {
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -29,7 +30,6 @@ export default function ListRepositorio({ nombreProfesor }) {
 
   const repositorio = [
     {
-      // Funciona
       id: "A6- Solicitud Excepcional",
       nombre: "A6 - Solicitud Excepcional",
       esMulti: true,
@@ -84,6 +84,10 @@ export default function ListRepositorio({ nombreProfesor }) {
       nombre: "Solicitud exención",
       soloAlumno: true,
     },
+    {
+      id: "Caddie",
+      nombre: "Formulario Caddie",
+    },
   ];
 
   useEffect(() => {
@@ -121,7 +125,6 @@ export default function ListRepositorio({ nombreProfesor }) {
 
   const abrirModal = (doc) => {
     setDocSeleccionado(doc);
-    // Resetear selecciones
     setAlumnoId(doc.esMulti ? [] : null);
     setEmpresaId(null);
     setModalAbierto(true);
@@ -137,7 +140,6 @@ export default function ListRepositorio({ nombreProfesor }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             docId: docSeleccionado.id,
-            // Enviamos ambos identificadores. El backend usará los que necesite.
             alumno_id: alumnoId,
             empresa_id: empresaId,
             es_multi: docSeleccionado.esMulti,
@@ -171,6 +173,9 @@ export default function ListRepositorio({ nombreProfesor }) {
   const esExclusivoEmpresa = docSeleccionado?.soloEmpresa;
   const requiereAmbos = !esExclusivoAlumno && !esExclusivoEmpresa;
 
+  // ✅ Corrección: comparar con el id del objeto, no con un string
+  const showCaddie = docSeleccionado?.id === "Caddie";
+
   return (
     <Container size="xl" py="xl">
       <Title order={2} mb="xl">
@@ -202,63 +207,69 @@ export default function ListRepositorio({ nombreProfesor }) {
         opened={modalAbierto}
         onClose={() => setModalAbierto(false)}
         title={<Text fw={700}>Generar: {docSeleccionado?.nombre}</Text>}
-        size="md"
+        // ✅ Modal más grande para Caddie, normal para el resto
+        size={showCaddie ? "xl" : "md"}
         centered
       >
-        <Stack spacing="lg">
-          {/* SECCIÓN EMPRESA: Se muestra si NO es exclusivo de Alumno */}
-          {(requiereAmbos || esExclusivoEmpresa) && (
-            <Select
-              label="Seleccionar Empresa"
-              placeholder="Busca la empresa..."
-              data={opcionesEmpresas}
-              searchable
-              value={empresaId}
-              onChange={setEmpresaId}
-              nothingFoundMessage="No se encontró la empresa"
-            />
-          )}
-
-          {requiereAmbos && <Divider label="y" labelPosition="center" />}
-
-          {/* SECCIÓN ALUMNO: Se muestra si NO es exclusivo de Empresa */}
-          {(requiereAmbos || esExclusivoAlumno) &&
-            (docSeleccionado?.esMulti ? (
-              <MultiSelect
-                label="Seleccionar Alumnos"
-                placeholder="Selecciona uno o varios alumnos..."
-                data={opcionesAlumnos}
-                searchable
-                value={alumnoId || []}
-                onChange={setAlumnoId}
-                nothingFoundMessage="No se encontró el alumno"
-              />
-            ) : (
+        {/* ✅ Si es Caddie, renderiza el iframe; si no, el formulario normal */}
+        {showCaddie ? (
+          <IframeCaddie />
+        ) : (
+          <Stack spacing="lg">
+            {(requiereAmbos || esExclusivoEmpresa) && (
               <Select
-                label="Seleccionar Alumno"
-                placeholder="Busca el alumno..."
-                data={opcionesAlumnos}
+                label="Seleccionar Empresa"
+                placeholder="Busca la empresa..."
+                data={opcionesEmpresas}
                 searchable
-                value={alumnoId}
-                onChange={setAlumnoId}
-                nothingFoundMessage="No se encontró el alumno"
+                value={empresaId}
+                onChange={setEmpresaId}
+                nothingFoundMessage="No se encontró la empresa"
               />
-            ))}
+            )}
 
-          <Button
-            fullWidth
-            leftSection={<IconFileExport size={18} />}
-            onClick={handleGenerar}
-            loading={loading}
-            disabled={
-              ((requiereAmbos || esExclusivoEmpresa) && !empresaId) ||
-              ((requiereAmbos || esExclusivoAlumno) &&
-                (docSeleccionado?.esMulti ? alumnoId?.length === 0 : !alumnoId))
-            }
-          >
-            Descargar Documento
-          </Button>
-        </Stack>
+            {requiereAmbos && <Divider label="y" labelPosition="center" />}
+
+            {(requiereAmbos || esExclusivoAlumno) &&
+              (docSeleccionado?.esMulti ? (
+                <MultiSelect
+                  label="Seleccionar Alumnos"
+                  placeholder="Selecciona uno o varios alumnos..."
+                  data={opcionesAlumnos}
+                  searchable
+                  value={alumnoId || []}
+                  onChange={setAlumnoId}
+                  nothingFoundMessage="No se encontró el alumno"
+                />
+              ) : (
+                <Select
+                  label="Seleccionar Alumno"
+                  placeholder="Busca el alumno..."
+                  data={opcionesAlumnos}
+                  searchable
+                  value={alumnoId}
+                  onChange={setAlumnoId}
+                  nothingFoundMessage="No se encontró el alumno"
+                />
+              ))}
+
+            <Button
+              fullWidth
+              leftSection={<IconFileExport size={18} />}
+              onClick={handleGenerar}
+              loading={loading}
+              disabled={
+                ((requiereAmbos || esExclusivoEmpresa) && !empresaId) ||
+                ((requiereAmbos || esExclusivoAlumno) &&
+                  (docSeleccionado?.esMulti
+                    ? alumnoId?.length === 0
+                    : !alumnoId))
+              }
+            >
+              Descargar Documento
+            </Button>
+          </Stack>
+        )}
       </Modal>
     </Container>
   );
