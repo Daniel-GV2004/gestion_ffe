@@ -28,6 +28,15 @@ class Usuario(Document):
         if user and user.check_password(password):
             return user
         return None
+    
+class Agenda(Document):
+    nombre = StringField(required=True)
+    descripcion = StringField()
+    fecha = DateTimeField(required=True)
+    fecha_fin = DateTimeField()
+    usuario = ReferenceField('Usuario', required=True)
+
+    meta = {"collection": "agenda"}
 
 class Alumno(Document):
     nombre = StringField(required=True, max_length=100)
