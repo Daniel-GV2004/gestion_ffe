@@ -4,7 +4,6 @@ import {
   Group,
   Title,
   Button,
-  Text,
   Container,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -27,26 +26,32 @@ import IframeCaddie from "./components/IframeCaddie.jsx";
 
 function App() {
   const [opened, { toggle }] = useDisclosure();
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
+
+  const [user, setUser] = useState(() => {
+    const usuarioGuardado = localStorage.getItem("usuario_crm");
+    return usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+  });
+
+  const handleLogin = (nombre) => {
+    const datosUsuario = { name: nombre };
+    setUser(datosUsuario);
+    localStorage.setItem("usuario_crm", JSON.stringify(datosUsuario));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("usuario_crm");
+    navigate("/");
+  };
 
   if (!user) {
     return (
       <Routes>
-        <Route
-          path="*"
-          element={
-            <ListLogin onLogin={(nombre) => setUser({ name: nombre })} />
-          }
-        />
+        <Route path="*" element={<ListLogin onLogin={handleLogin} />} />
       </Routes>
     );
   }
-
-  const handleLogout = () => {
-    setUser(null);
-    navigate("/");
-  };
 
   return (
     <AppShell
