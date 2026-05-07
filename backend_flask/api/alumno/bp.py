@@ -4,6 +4,7 @@ from core.models import Alumno
 from mongoengine.errors import ValidationError
 from bson.errors import InvalidId
 from mongoengine.errors import NotUniqueError
+from .utils import calcular_curso
 
 bp = Blueprint('alumno', __name__)
 
@@ -26,19 +27,21 @@ def create_alumno():
         data = alumno_schema.load(json_data)
         nuevo_alumno = Alumno(**data)
         
-        # 2. SE GUARDA EN MONGO (Esto te estaba funcionando bien)
+        # ASIGNACIÓN AUTOMÁTICA DEL CURSO EN LA CREACIÓN
+        nuevo_alumno.curso = calcular_curso()
+        
+        # 2. SE GUARDA EN MONGO
         nuevo_alumno.save()
         
-        # 3. EL ARREGLO: Empaquetar para el viaje de vuelta de forma segura
+        # 3. EL ARREGLO: Empaquetar para el viaje de vuelta
         result = alumno_schema.dump(nuevo_alumno)
-        result['id'] = str(nuevo_alumno.id) # Convertimos el ID raro de Mongo a texto normal
+        result['id'] = str(nuevo_alumno.id)
         
         return jsonify(result), 201
         
     except NotUniqueError:
         return jsonify({"error": "Ese NIF/NIE ya está registrado en otro alumno"}), 400
     except Exception as e:
-        # Añadimos este print para que, si falla, la terminal de Flask te chive el error exacto
         print("💥 ERROR EN POST /alumnos:", str(e))
         return jsonify({"error": str(e)}), 500
     
@@ -64,13 +67,17 @@ def update_alumno(id):
 
         data = request.get_json()
         for key, value in data.items():
-            if key not in ['id', '_id']:
+            # Evitamos que el front sobrescriba el id o el curso manualmente
+            if key not in ['id', '_id', 'curso']: 
                 setattr(alumno, key, value)
-            
+        
+        # ACTUALIZACIÓN AUTOMÁTICA DEL CURSO AL EDITAR (Por si repite)
+        alumno.curso = calcular_curso()
+        
         alumno.save()
         return jsonify({"mensaje": "Alumno actualizado"}), 200
         
-    except NotUniqueError: # <--- AÑADE ESTO
+    except NotUniqueError: 
         return jsonify({"error": "Ese NIF/NIE ya está registrado en otro alumno"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 400

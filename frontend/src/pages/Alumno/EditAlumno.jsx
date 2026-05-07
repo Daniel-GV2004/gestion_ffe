@@ -32,6 +32,11 @@ export default function EditAlumno() {
       email: "",
       telefono: "",
       nuss: "",
+      direccion: "",
+      localidad: "",
+      provincia: "",
+      cp: "",
+      curso: "", // Añadido para poder mostrarlo
     },
     validate: {
       nombre: (value) => (value.length < 2 ? "El nombre es muy corto" : null),
@@ -43,16 +48,9 @@ export default function EditAlumno() {
   // Cargar datos si estamos editando
   useEffect(() => {
     if (isEditing) {
-      console.log("1. Pidiendo datos del alumno con ID:", id);
-
       fetch(`http://127.0.0.1:5000/api/alumno/alumnos/${id}`)
-        .then((res) => {
-          console.log("2. Estado de la respuesta del servidor:", res.status);
-          return res.json();
-        })
+        .then((res) => res.json())
         .then((data) => {
-          console.log("3. JSON recibido del backend:", data);
-
           if (!data.error) {
             form.setValues({
               nombre: data.nombre || "",
@@ -61,16 +59,18 @@ export default function EditAlumno() {
               email: data.email || "",
               telefono: data.telefono || "",
               nuss: data.nuss || "",
+              direccion: data.direccion || "",
+              localidad: data.localidad || "",
+              provincia: data.provincia || "",
+              cp: data.cp || "",
+              curso: data.curso || "",
             });
-            console.log("4. Inputs rellenados correctamente.");
           } else {
-            console.error("El backend devolvió un error:", data.error);
             setNotificacion({ type: "error", message: data.error });
           }
           setLoadingData(false);
         })
         .catch((err) => {
-          console.error("💥 ERROR CRÍTICO al conectar:", err);
           setNotificacion({ type: "error", message: "Error al cargar datos" });
           setLoadingData(false);
         });
@@ -81,6 +81,9 @@ export default function EditAlumno() {
     setLoadingSubmit(true);
     setNotificacion(null);
 
+    // Eliminamos el 'curso' del envío para que el backend lo calcule solo
+    const { curso, ...datosAEnviar } = values;
+
     try {
       const url = isEditing
         ? `http://127.0.0.1:5000/api/alumno/alumnos/${id}`
@@ -90,7 +93,7 @@ export default function EditAlumno() {
       const response = await fetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(datosAEnviar),
       });
 
       const data = await response.json();
@@ -192,6 +195,9 @@ export default function EditAlumno() {
         )}
 
         <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Title order={5} mt="md" mb="sm" c="dimmed">
+            Datos Personales
+          </Title>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Nombre"
@@ -228,6 +234,49 @@ export default function EditAlumno() {
               {...form.getInputProps("nuss")}
             />
           </SimpleGrid>
+
+          <Title order={5} mt="xl" mb="sm" c="dimmed">
+            Datos de Residencia
+          </Title>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            <TextInput
+              label="Dirección"
+              placeholder="Calle, número, piso..."
+              {...form.getInputProps("direccion")}
+            />
+            <TextInput
+              label="Localidad"
+              placeholder="Ej: Valladolid"
+              {...form.getInputProps("localidad")}
+            />
+            <TextInput
+              label="Provincia"
+              placeholder="Ej: Valladolid"
+              {...form.getInputProps("provincia")}
+            />
+            <TextInput
+              label="Código Postal"
+              placeholder="Ej: 47000"
+              {...form.getInputProps("cp")}
+            />
+          </SimpleGrid>
+
+          {/* Mostrar el curso solo si estamos editando (ya que lo genera el backend) */}
+          {isEditing && form.values.curso && (
+            <>
+              <Title order={5} mt="xl" mb="sm" c="dimmed">
+                Información Académica
+              </Title>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <TextInput
+                  label="Curso Académico"
+                  disabled
+                  description="Calculado automáticamente por el sistema"
+                  {...form.getInputProps("curso")}
+                />
+              </SimpleGrid>
+            </>
+          )}
 
           <Group justify={isEditing ? "space-between" : "flex-end"} mt="xl">
             {isEditing && (

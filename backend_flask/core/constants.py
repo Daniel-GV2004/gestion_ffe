@@ -45,11 +45,11 @@ def etiquetas_alumno(alumno):
         "[TELEFONO]": alumno.get('telefono', ''),
         "[NUSS]": alumno.get('nuss', ''),
         "[GRUPO]": alumno.get('grupo', ''),
-        "[DIRECCION]": "Calle Imaginaria",
-        "[LOCALIDAD]": "Valladolid",
-        "[PROVINCIA]": "Valladolid",
-        "[CP]": "47010",
-        "[CURSO]": "2025/2026"
+        "[DIRECCION]": alumno.get('direccion', ''),
+        "[LOCALIDAD]": alumno.get('localidad', ''),
+        "[PROVINCIA]": alumno.get('provincia', ''),
+        "[CP]": alumno.get('cp', ''),
+        "[CURSO]": alumno.get('curso', ''),
     }
 
 def etiquetas_centro():

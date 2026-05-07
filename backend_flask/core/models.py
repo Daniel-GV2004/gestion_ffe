@@ -45,6 +45,11 @@ class Alumno(Document):
     email = EmailField(required=True, unique=True)
     telefono = StringField(max_length=20)
     nuss = StringField(max_length=12) 
+    direccion = StringField()
+    localidad = StringField()
+    provincia = StringField()
+    cp = StringField()
+    curso = StringField()
 
     meta = {
         'collection': 'alumnos',
