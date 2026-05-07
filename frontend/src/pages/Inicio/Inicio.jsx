@@ -17,6 +17,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import esLocale from "@fullcalendar/core/locales/es";
 import "@mantine/dates/styles.css";
 
 const Inicio = ({ user }) => {
@@ -116,9 +117,12 @@ const Inicio = ({ user }) => {
     if (!window.confirm("¿Estás seguro de eliminar este evento?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/agenda/${formData.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/agenda/${formData.id}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (res.ok) {
         cargarEventos();
@@ -162,7 +166,9 @@ const Inicio = ({ user }) => {
                   center: "title",
                   right: "dayGridMonth,timeGridWeek,timeGridDay",
                 }}
+                locales={[esLocale]}
                 locale="es"
+                firstDay={1}
                 events={eventos}
                 dateClick={handleDateClick}
                 eventClick={handleEventClick}
