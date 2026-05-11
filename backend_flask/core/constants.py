@@ -50,6 +50,7 @@ def etiquetas_alumno(alumno):
         "[PROVINCIA]": alumno.get('provincia', ''),
         "[CP]": alumno.get('cp', ''),
         "[CURSO]": alumno.get('curso', ''),
+        "[GRADO]": alumno.get('grado', 'DAM')
     }
 
 def etiquetas_centro():
