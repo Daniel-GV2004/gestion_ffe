@@ -1,4 +1,4 @@
-from mongoengine import Document, ReferenceField, DateTimeField, IntField, StringField, EmailField, ListField
+from mongoengine import Document, ReferenceField, DateTimeField, IntField, StringField, EmailField, ListField, SequenceField
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -70,6 +70,8 @@ class Empresa(Document):
     nombre_contacto = StringField(max_length=100)
     telefono = StringField(max_length=20)
     direccion = StringField(max_length=255)
+    numero_secuencia = SequenceField()
+    codigo_acuerdo = StringField()
 
     nombre_tutor_empresa = StringField(max_length=100)
     apellidos_tutor_empresa = StringField(max_length=150)
