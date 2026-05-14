@@ -33,6 +33,7 @@ export default function EditEmpresa() {
       nombre_contacto: "",
       telefono: "",
       direccion: "",
+      cp: "", // <--- AÑADIDO
       nombre_tutor_empresa: "",
       apellidos_tutor_empresa: "",
       email_tutor_empresa: "",
@@ -62,6 +63,7 @@ export default function EditEmpresa() {
               nombre_contacto: data.nombre_contacto || "",
               telefono: data.telefono || "",
               direccion: data.direccion || "",
+              cp: data.cp || "", // <--- AÑADIDO
               nombre_tutor_empresa: data.nombre_tutor_empresa || "",
               apellidos_tutor_empresa: data.apellidos_tutor_empresa || "",
               email_tutor_empresa: data.email_tutor_empresa || "",
@@ -240,11 +242,17 @@ export default function EditEmpresa() {
               {...form.getInputProps("nombre_contacto")}
               style={{ gridColumn: "span 2" }}
             />
+
+            {/* AÑADIDO: Dirección ahora ocupa 1 columna en pantallas grandes y CP la otra */}
             <TextInput
               label="Dirección Física"
               placeholder="Calle Mayor 1"
               {...form.getInputProps("direccion")}
-              style={{ gridColumn: "span 2" }}
+            />
+            <TextInput
+              label="Código Postal"
+              placeholder="Ej: 47000"
+              {...form.getInputProps("cp")}
             />
           </SimpleGrid>
 

@@ -79,7 +79,7 @@ def etiquetas_empresa(empresa):
         "[EMP_DIRECCION]": empresa.get("direccion", ""),
         "[EMP_LOCALIDAD]": "Valladolid",
         "[EMP_PROVINCIA]": "Valladolid",
-        "[EMP_CP]": "47010",
+        "[EMP_CP]": empresa.get("cp", ""),
         "[CODIGO_ACUERDO]": empresa.get("codigo_acuerdo", ""),
         "[REP_NOMBRE]": empresa.get("nombre_contacto", ""),
         "[TUTOR_NOMBRE]": f"{empresa.get('nombre_tutor_empresa', '')} {empresa.get('apellidos_tutor_empresa', '')}".strip(),

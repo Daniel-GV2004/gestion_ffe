@@ -13,6 +13,7 @@ class EmpresaSchema(Schema):
     direccion = fields.String(allow_none=True)
     numero_secuencia = fields.Integer(dump_only=True)
     codigo_acuerdo = fields.String(dump_only=True)
+    cp = fields.Integer(required=True)
     
     nombre_tutor_empresa = fields.Str(allow_none=True)
     apellidos_tutor_empresa = fields.Str(allow_none=True)

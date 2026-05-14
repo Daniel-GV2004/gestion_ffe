@@ -72,6 +72,7 @@ class Empresa(Document):
     direccion = StringField(max_length=255)
     numero_secuencia = SequenceField()
     codigo_acuerdo = StringField()
+    cp = StringField()
 
     nombre_tutor_empresa = StringField(max_length=100)
     apellidos_tutor_empresa = StringField(max_length=150)
