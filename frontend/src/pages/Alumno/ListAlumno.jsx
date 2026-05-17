@@ -12,22 +12,28 @@ import {
 } from "@mantine/core";
 import { IconUserPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { getAlumnos } from "../../api";
 
 export default function Alumnos() {
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [scrolled, setScrolled] = useState(false); // Estado necesario para el onScrollPositionChange
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/alumno/alumnos")
-      .then((res) => res.json())
-      .then((data) => {
-        setDatos(Array.isArray(data) ? data : []);
-        setLoading(false);
+    getAlumnos()
+      .then(async (res) => {
+        if (res && res.ok) {
+          const data = await res.json();
+          setDatos(Array.isArray(data) ? data : []);
+        } else {
+          setDatos([]);
+        }
       })
       .catch((err) => {
         console.error("Error cargando alumnos:", err);
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, []);
@@ -45,7 +51,6 @@ export default function Alumnos() {
   const ths = (
     <Table.Tr>
       <Table.Th style={{ width: 50 }}></Table.Th>{" "}
-      {/* Columna para el botón editar */}
       {columnas.map((col) => (
         <Table.Th key={col} style={{ textTransform: "uppercase" }}>
           {col.replace(/_/g, " ")}
@@ -55,7 +60,6 @@ export default function Alumnos() {
   );
 
   const rows = datos.map((alumno) => {
-    // Rescatamos el ID seguro para la redirección
     const alumnoId = alumno._id?.$oid || alumno._id || alumno.id;
 
     return (

@@ -19,6 +19,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
 import "@mantine/dates/styles.css";
+import { getAgendas, postAgenda, updateAgenda, deleteAgenda } from "../../api";
 
 const Inicio = ({ user }) => {
   const [eventos, setEventos] = useState([]);
@@ -32,10 +33,11 @@ const Inicio = ({ user }) => {
     fecha_fin: null,
   });
 
-  const cargarEventos = () => {
-    fetch("http://localhost:5000/api/agenda/")
-      .then((res) => res.json())
-      .then((data) => {
+  const cargarEventos = async () => {
+    try {
+      const res = await getAgendas();
+      if (res && res.ok) {
+        const data = await res.json();
         const eventosFormateados = data.map((evento) => ({
           id: evento.id,
           title: evento.nombre,
@@ -47,8 +49,10 @@ const Inicio = ({ user }) => {
           },
         }));
         setEventos(eventosFormateados);
-      })
-      .catch((err) => console.error("Error cargando agenda:", err));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -80,11 +84,6 @@ const Inicio = ({ user }) => {
   };
 
   const handleSave = async () => {
-    const url = isEditing
-      ? `http://localhost:5000/api/agenda/${formData.id}`
-      : "http://localhost:5000/api/agenda/";
-    const method = isEditing ? "PUT" : "POST";
-
     const payload = {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
@@ -96,17 +95,13 @@ const Inicio = ({ user }) => {
     };
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = isEditing
+        ? await updateAgenda(formData.id, payload)
+        : await postAgenda(payload);
 
-      if (res.ok) {
+      if (res && res.ok) {
         cargarEventos();
         close();
-      } else {
-        console.error("Error al guardar el evento");
       }
     } catch (error) {
       console.error(error);
@@ -117,14 +112,9 @@ const Inicio = ({ user }) => {
     if (!window.confirm("¿Estás seguro de eliminar este evento?")) return;
 
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/agenda/${formData.id}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const res = await deleteAgenda(formData.id);
 
-      if (res.ok) {
+      if (res && res.ok) {
         cargarEventos();
         close();
       }

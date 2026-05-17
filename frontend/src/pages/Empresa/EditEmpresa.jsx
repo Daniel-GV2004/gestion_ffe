@@ -14,17 +14,22 @@ import {
 import { useForm } from "@mantine/form";
 import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  getEmpresa,
+  postEmpresa,
+  updateEmpresa,
+  deleteEmpresa,
+} from "../../api";
 
 export default function EditEmpresa() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const isEditing = Boolean(id); // Si hay ID en la URL, estamos en modo edición
+  const isEditing = Boolean(id);
 
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditing);
   const [notificacion, setNotificacion] = useState(null);
 
-  // Configuración del formulario con Mantine
   const form = useForm({
     initialValues: {
       nombre_empresa: "",
@@ -33,7 +38,7 @@ export default function EditEmpresa() {
       nombre_contacto: "",
       telefono: "",
       direccion: "",
-      cp: "", // <--- AÑADIDO
+      cp: "",
       nombre_tutor_empresa: "",
       apellidos_tutor_empresa: "",
       email_tutor_empresa: "",
@@ -49,10 +54,9 @@ export default function EditEmpresa() {
     },
   });
 
-  // 1. Cargar datos si estamos editando
   useEffect(() => {
     if (isEditing) {
-      fetch(`http://127.0.0.1:5000/api/empresa/empresas/${id}`)
+      getEmpresa(id)
         .then((res) => res.json())
         .then((data) => {
           if (!data.error) {
@@ -63,7 +67,7 @@ export default function EditEmpresa() {
               nombre_contacto: data.nombre_contacto || "",
               telefono: data.telefono || "",
               direccion: data.direccion || "",
-              cp: data.cp || "", // <--- AÑADIDO
+              cp: data.cp || "",
               nombre_tutor_empresa: data.nombre_tutor_empresa || "",
               apellidos_tutor_empresa: data.apellidos_tutor_empresa || "",
               email_tutor_empresa: data.email_tutor_empresa || "",
@@ -80,29 +84,17 @@ export default function EditEmpresa() {
     }
   }, [id, isEditing]);
 
-  // 2. Guardar (POST o PUT)
   const handleSubmit = async (values) => {
     setLoadingSubmit(true);
     setNotificacion(null);
 
-    // Filtrar los valores vacíos para campos no obligatorios
     const payload = { ...values };
     if (!payload.email_tutor_empresa) delete payload.email_tutor_empresa;
 
     try {
-      // Determinamos URL y método dinámicamente
-      const url = isEditing
-        ? `http://127.0.0.1:5000/api/empresa/empresas/${id}`
-        : "http://127.0.0.1:5000/api/empresa/empresas";
-      const method = isEditing ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = isEditing
+        ? await updateEmpresa(id, payload)
+        : await postEmpresa(payload);
 
       const data = await response.json();
 
@@ -130,7 +122,6 @@ export default function EditEmpresa() {
     }
   };
 
-  // 3. Eliminar Empresa
   const handleDelete = async () => {
     if (
       !window.confirm(
@@ -142,14 +133,8 @@ export default function EditEmpresa() {
 
     setLoadingSubmit(true);
     try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/api/empresa/empresas/${id}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (response.ok) {
+      const response = await deleteEmpresa(id);
+      if (response && response.ok) {
         setNotificacion({
           type: "success",
           message: "Empresa eliminada correctamente",
@@ -165,7 +150,6 @@ export default function EditEmpresa() {
     }
   };
 
-  // Spinner mientras cargan los datos en modo edición
   if (loadingData) {
     return (
       <Center style={{ height: "50vh" }}>
@@ -242,8 +226,6 @@ export default function EditEmpresa() {
               {...form.getInputProps("nombre_contacto")}
               style={{ gridColumn: "span 2" }}
             />
-
-            {/* AÑADIDO: Dirección ahora ocupa 1 columna en pantallas grandes y CP la otra */}
             <TextInput
               label="Dirección Física"
               placeholder="Calle Mayor 1"

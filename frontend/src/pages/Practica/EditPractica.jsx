@@ -16,11 +16,19 @@ import { useForm } from "@mantine/form";
 import { useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
+import {
+  getAlumnos,
+  getEmpresas,
+  getPractica,
+  postPractica,
+  updatePractica,
+  deletePractica,
+} from "../../api";
 
 export default function EditPractica() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const isEditing = Boolean(id); // Detecta si estamos creando o editando
+  const isEditing = Boolean(id);
 
   const [opcionesAlumnos, setOpcionesAlumnos] = useState([]);
   const [opcionesEmpresas, setOpcionesEmpresas] = useState([]);
@@ -50,16 +58,11 @@ export default function EditPractica() {
     const cargarTodo = async () => {
       setLoadingData(true);
       try {
-        // 1. Descargamos Alumnos y Empresas a la vez para que sea más rápido
-        const [resA, resE] = await Promise.all([
-          fetch("http://127.0.0.1:5000/api/alumno/alumnos"),
-          fetch("http://127.0.0.1:5000/api/empresa/empresas"),
-        ]);
+        const [resA, resE] = await Promise.all([getAlumnos(), getEmpresas()]);
 
-        const dataA = await resA.json();
-        const dataE = await resE.json();
+        const dataA = resA && resA.ok ? await resA.json() : [];
+        const dataE = resE && resE.ok ? await resE.json() : [];
 
-        // Procesar Alumnos
         const arrayAlumnos = Array.isArray(dataA) ? dataA : dataA.alumnos || [];
         setOpcionesAlumnos(
           arrayAlumnos
@@ -74,7 +77,6 @@ export default function EditPractica() {
             .filter((op) => op.value !== "undefined" && op.value !== "null"),
         );
 
-        // Procesar Empresas
         const arrayEmpresas = Array.isArray(dataE)
           ? dataE
           : dataE.empresas || [];
@@ -91,48 +93,45 @@ export default function EditPractica() {
             .filter((op) => op.value !== "undefined" && op.value !== "null"),
         );
 
-        // 2. Si estamos en MODO EDICIÓN, descargamos los datos de la práctica
         if (isEditing) {
-          const resP = await fetch(
-            `http://127.0.0.1:5000/api/practica/practicas/${id}`,
-          );
-          const dataP = await resP.json();
+          const resP = await getPractica(id);
 
-          if (!dataP.error) {
-            const extraerId = (campo) => {
-              if (!campo) return "";
-              // Si es un objeto, intentamos sacar su ID de las formas habituales en Mongo/Flask
-              if (typeof campo === "object") {
-                return String(campo.id || campo._id?.$oid || campo._id || "");
-              }
-              // Si ya es un texto (string), lo devolvemos tal cual
-              return String(campo);
-            };
+          if (resP && resP.ok) {
+            const dataP = await resP.json();
 
-            const idAlumno = extraerId(dataP.alumno);
-            const idEmpresa = extraerId(dataP.empresa);
+            if (!dataP.error) {
+              const extraerId = (campo) => {
+                if (!campo) return "";
+                if (typeof campo === "object") {
+                  return String(campo.id || campo._id?.$oid || campo._id || "");
+                }
+                return String(campo);
+              };
 
-            // Formatear fechas para que el input type="date" las entienda (YYYY-MM-DD)
-            const formatoFecha = (fecha) =>
-              fecha ? new Date(fecha).toISOString().substring(0, 10) : "";
+              const idAlumno = extraerId(dataP.alumno);
+              const idEmpresa = extraerId(dataP.empresa);
 
-            form.setValues({
-              alumno: idAlumno,
-              empresa: idEmpresa,
-              fecha_inicio: formatoFecha(dataP.fecha_inicio),
-              fecha_fin: formatoFecha(dataP.fecha_fin),
-              horas_totales: dataP.horas_totales || 0,
-              ciclo: dataP.ciclo || "",
-              curso: dataP.curso || "",
-              y_academico: dataP.y_academico || "",
-            });
-          } else {
-            notifications.show({
-              title: "Error",
-              message: "No se pudo cargar la práctica",
-              color: "red",
-              icon: <IconX />,
-            });
+              const formatoFecha = (fecha) =>
+                fecha ? new Date(fecha).toISOString().substring(0, 10) : "";
+
+              form.setValues({
+                alumno: idAlumno,
+                empresa: idEmpresa,
+                fecha_inicio: formatoFecha(dataP.fecha_inicio),
+                fecha_fin: formatoFecha(dataP.fecha_fin),
+                horas_totales: dataP.horas_totales || 0,
+                ciclo: dataP.ciclo || "",
+                curso: dataP.curso || "",
+                y_academico: dataP.y_academico || "",
+              });
+            } else {
+              notifications.show({
+                title: "Error",
+                message: "No se pudo cargar la práctica",
+                color: "red",
+                icon: <IconX />,
+              });
+            }
           }
         }
       } catch (error) {
@@ -154,20 +153,13 @@ export default function EditPractica() {
   const handleSubmit = async (values) => {
     setLoadingSubmit(true);
     try {
-      const url = isEditing
-        ? `http://127.0.0.1:5000/api/practica/practicas/${id}`
-        : "http://127.0.0.1:5000/api/practica/practicas";
-      const method = isEditing ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
+      const response = isEditing
+        ? await updatePractica(id, values)
+        : await postPractica(values);
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response && response.ok) {
         notifications.show({
           title: "¡Éxito!",
           message: isEditing
@@ -202,11 +194,9 @@ export default function EditPractica() {
 
     setLoadingSubmit(true);
     try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/api/practica/practicas/${id}`,
-        { method: "DELETE" },
-      );
-      if (response.ok) {
+      const response = await deletePractica(id);
+
+      if (response && response.ok) {
         notifications.show({
           title: "Eliminada",
           message: "Práctica eliminada correctamente",

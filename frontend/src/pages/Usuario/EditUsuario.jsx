@@ -20,6 +20,7 @@ import {
 } from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
+import { getUsuario, registerUsuario, updateUsuario } from "../../api";
 
 export default function EditUsuario() {
   const navigate = useNavigate();
@@ -29,7 +30,6 @@ export default function EditUsuario() {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditing);
 
-  // Lista de grados disponibles (puedes ampliarla aquí)
   const opcionesGrados = [
     { value: "DAM", label: "DAM - Aplicaciones Multiplataforma" },
     { value: "DAW", label: "DAW - Aplicaciones Web" },
@@ -44,7 +44,6 @@ export default function EditUsuario() {
     },
     validate: {
       nombre: (value) => (value.length < 2 ? "El nombre es muy corto" : null),
-      // Al editar, la contraseña podría ser opcional. Aquí la validamos si se escribe algo.
       password: (value) =>
         !isEditing && value.length <= 4
           ? "La contraseña debe tener más de 4 caracteres"
@@ -56,16 +55,15 @@ export default function EditUsuario() {
     },
   });
 
-  // 1. Cargar datos si estamos editando
   useEffect(() => {
     if (isEditing) {
-      fetch(`http://127.0.0.1:5000/api/usuario/usuarios/${id}`)
+      getUsuario(id)
         .then((res) => res.json())
         .then((data) => {
           if (!data.error) {
             form.setValues({
               nombre: data.nombre || "",
-              password: "", // La contraseña no se descarga por seguridad
+              password: "",
               grados: data.grados || [],
             });
           } else {
@@ -89,20 +87,12 @@ export default function EditUsuario() {
     }
   }, [id, isEditing]);
 
-  // 2. Guardar (POST o PUT)
   const handleSubmit = async (values) => {
     setLoadingSubmit(true);
     try {
-      const url = isEditing
-        ? `http://127.0.0.1:5000/api/usuario/usuarios/${id}`
-        : "http://127.0.0.1:5000/api/usuario/register"; // Ruta de registro para nuevos
-      const method = isEditing ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
+      const response = isEditing
+        ? await updateUsuario(id, values)
+        : await registerUsuario(values.nombre, values.password, values.grados);
 
       if (response.ok) {
         notifications.show({

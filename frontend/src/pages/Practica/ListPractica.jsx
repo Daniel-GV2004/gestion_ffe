@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { IconPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { getPracticas } from "../../api";
 
 export default function ListPractica() {
   const [datos, setDatos] = useState([]);
@@ -21,11 +22,15 @@ export default function ListPractica() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const resP = await fetch("http://127.0.0.1:5000/api/practica/practicas");
-      const dataP = await resP.json();
-      setDatos(Array.isArray(dataP) ? dataP : []);
+      const resP = await getPracticas();
+      if (resP && resP.ok) {
+        const dataP = await resP.json();
+        setDatos(Array.isArray(dataP) ? dataP : []);
+      } else {
+        setDatos([]);
+      }
     } catch (err) {
-      console.error("Error cargando datos:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -35,7 +40,6 @@ export default function ListPractica() {
     fetchData();
   }, []);
 
-  // Pantalla de carga mientras trae las prácticas
   if (loading) {
     return (
       <Center style={{ height: "50vh" }}>
@@ -63,7 +67,6 @@ export default function ListPractica() {
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead>
             <Table.Tr>
-              {/* Columna vacía para el icono de editar */}
               <Table.Th style={{ width: 50 }}></Table.Th>
               {columnas.map((col) => (
                 <Table.Th key={col}>{col}</Table.Th>
@@ -73,10 +76,7 @@ export default function ListPractica() {
           <Table.Tbody>
             {datos.length > 0 ? (
               datos.map((p, i) => {
-                // Capturamos el ID de la práctica, venga como venga de Mongo
                 const practicaId = p.id || p._id?.$oid || p._id;
-
-                // Formateamos las fechas para que no salgan horas feas si las hubiera
                 const formatFecha = (f) =>
                   f ? String(f).substring(0, 10) : "-";
 
@@ -93,7 +93,6 @@ export default function ListPractica() {
                         <IconEdit size={20} stroke={1.5} />
                       </ActionIcon>
                     </Table.Td>
-                    {/* Ten en cuenta que si el backend devuelve un objeto para alumno, aquí mostramos el nombre */}
                     <Table.Td>{p.alumno_nombre || p.alumno}</Table.Td>
                     <Table.Td>{p.empresa_nombre || p.empresa}</Table.Td>
                     <Table.Td>{formatFecha(p.fecha_inicio)}</Table.Td>
@@ -103,7 +102,6 @@ export default function ListPractica() {
               })
             ) : (
               <Table.Tr>
-                {/* colSpan = número de columnas de datos + 1 (por la del lápiz) */}
                 <Table.Td colSpan={columnas.length + 1} align="center">
                   No hay prácticas registradas
                 </Table.Td>

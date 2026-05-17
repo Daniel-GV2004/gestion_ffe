@@ -21,6 +21,12 @@ import {
   IconUpload,
 } from "@tabler/icons-react";
 import IframeCaddie from "../../components/IframeCaddie";
+import {
+  getAlumnos,
+  getEmpresas,
+  getPracticas,
+  generarDocumento,
+} from "../../api";
 
 export default function ListRepositorio({ nombreProfesor }) {
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -140,43 +146,45 @@ export default function ListRepositorio({ nombreProfesor }) {
 
     const fetchOpciones = async () => {
       try {
-        const resA = await fetch("http://127.0.0.1:5000/api/alumno/alumnos");
+        const [resA, resE, resP] = await Promise.all([
+          getAlumnos(),
+          getEmpresas(),
+          getPracticas(),
+        ]);
+
         const dataA = await resA.json();
-        const arrayAlumnos = Array.isArray(dataA) ? dataA : dataA.alumnos || [];
-
-        const alumnosMapeados = arrayAlumnos.map((a) => ({
-          value: extraerId(a),
-          label:
-            `${a.nombre || ""} ${a.apellidos || ""} - ${a.nif || ""}`.trim(),
-        }));
-        setOpcionesAlumnos(alumnosMapeados);
-
-        const resE = await fetch("http://127.0.0.1:5000/api/empresa/empresas");
         const dataE = await resE.json();
+        const dataP = await resP.json();
+
+        const arrayAlumnos = Array.isArray(dataA) ? dataA : dataA.alumnos || [];
+        setOpcionesAlumnos(
+          arrayAlumnos.map((a) => ({
+            value: extraerId(a),
+            label:
+              `${a.nombre || ""} ${a.apellidos || ""} - ${a.nif || ""}`.trim(),
+          })),
+        );
+
         const arrayEmpresas = Array.isArray(dataE)
           ? dataE
           : dataE.empresas || [];
-
-        const empresasMapeadas = arrayEmpresas.map((e) => ({
-          value: extraerId(e),
-          label:
-            `${e.nombre_empresa || e.nombre || "Empresa"} - ${e.cif || ""}`.trim(),
-        }));
-        setOpcionesEmpresas(empresasMapeadas);
-
-        const resP = await fetch(
-          "http://127.0.0.1:5000/api/practica/practicas",
+        setOpcionesEmpresas(
+          arrayEmpresas.map((e) => ({
+            value: extraerId(e),
+            label:
+              `${e.nombre_empresa || e.nombre || "Empresa"} - ${e.cif || ""}`.trim(),
+          })),
         );
-        const dataP = await resP.json();
+
         const arrayPracticas = Array.isArray(dataP)
           ? dataP
           : dataP.practicas || [];
-
-        const practicasMapeadas = arrayPracticas.map((p) => ({
-          value: extraerId(p),
-          label: `${p.alumno || "Sin Alumno"} - ${p.empresa || "Sin Empresa"}`,
-        }));
-        setOpcionesPracticas(practicasMapeadas);
+        setOpcionesPracticas(
+          arrayPracticas.map((p) => ({
+            value: extraerId(p),
+            label: `${p.alumno || "Sin Alumno"} - ${p.empresa || "Sin Empresa"}`,
+          })),
+        );
       } catch (error) {
         console.error(error);
       }
@@ -197,9 +205,9 @@ export default function ListRepositorio({ nombreProfesor }) {
     setLoading(true);
     try {
       let bodyData;
-      let headersConfig = {};
+      const isFormData = !!docSeleccionado.reqArchivo;
 
-      if (docSeleccionado.reqArchivo) {
+      if (isFormData) {
         const formData = new FormData();
         formData.append("file", archivoPlantilla);
         formData.append("docId", docSeleccionado.id);
@@ -218,17 +226,9 @@ export default function ListRepositorio({ nombreProfesor }) {
           es_multi: docSeleccionado.esMulti,
           usuario: { nombre: nombreProfesor },
         });
-        headersConfig = { "Content-Type": "application/json" };
       }
 
-      const response = await fetch(
-        "http://127.0.0.1:5000/api/repositorio/generar",
-        {
-          method: "POST",
-          headers: headersConfig,
-          body: bodyData,
-        },
-      );
+      const response = await generarDocumento(bodyData, isFormData);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);

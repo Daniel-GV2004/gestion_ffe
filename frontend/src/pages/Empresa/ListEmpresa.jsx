@@ -11,8 +11,9 @@ import {
   Group,
   ActionIcon, // Añadido para el botón
 } from "@mantine/core";
-import { IconBuildingPlus, IconEdit } from "@tabler/icons-react"; // Añadido IconEdit
+import { IconBuildingPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { getEmpresas } from "../../api";
 
 export default function ListEmpresa() {
   const [datos, setDatos] = useState([]);
@@ -20,14 +21,19 @@ export default function ListEmpresa() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/empresa/empresas")
-      .then((res) => res.json())
-      .then((data) => {
-        setDatos(Array.isArray(data) ? data : []);
-        setLoading(false);
+    getEmpresas()
+      .then(async (res) => {
+        if (res && res.ok) {
+          const data = await res.json();
+          setDatos(Array.isArray(data) ? data : []);
+        } else {
+          setDatos([]);
+        }
       })
       .catch((err) => {
         console.error("Error cargando empresas:", err);
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, []);
@@ -98,7 +104,7 @@ export default function ListEmpresa() {
 
         <Button
           leftSection={<IconBuildingPlus size={18} />}
-          onClick={() => navigate("/empresas/nueva")} // Asegúrate de que esta ruta coincida con tu App.jsx (puede ser /nuevo)
+          onClick={() => navigate("/empresas/nueva")}
           variant="filled"
           color="blue"
         >
@@ -114,7 +120,6 @@ export default function ListEmpresa() {
               rows
             ) : (
               <Table.Tr>
-                {/* Le sumamos 1 al colSpan por la nueva columna del lápiz */}
                 <Table.Td colSpan={columnas.length + 1} align="center">
                   No hay empresas registradas
                 </Table.Td>

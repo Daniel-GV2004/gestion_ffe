@@ -13,24 +13,28 @@ import {
 } from "@mantine/core";
 import { IconUserPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { getUsuarios } from "../../api";
 
 export default function Usuarios() {
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchUsuarios = () => {
+  const fetchUsuarios = async () => {
     setLoading(true);
-    fetch("http://127.0.0.1:5000/api/usuario/usuarios")
-      .then((res) => res.json())
-      .then((data) => {
+    try {
+      const res = await getUsuarios();
+      if (res && res.ok) {
+        const data = await res.json();
         setDatos(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error cargando usuarios:", err);
-        setLoading(false);
-      });
+      } else {
+        setDatos([]);
+      }
+    } catch (err) {
+      console.error("Error cargando usuarios:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

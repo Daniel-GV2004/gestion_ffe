@@ -12,6 +12,7 @@ import {
   Loader,
 } from "@mantine/core";
 import { IconCopy, IconCheck } from "@tabler/icons-react";
+import { getCodigoCentro } from "../../api";
 
 export default function IframeCaddie() {
   const [codigoCentro, setCodigoCentro] = useState("");
@@ -20,12 +21,15 @@ export default function IframeCaddie() {
   useEffect(() => {
     const fetchCodigo = async () => {
       try {
-        const response = await fetch(
-          "http://127.0.0.1:5000/api/repositorio/codigo-centro",
-        );
-        const data = await response.json();
-        if (data.codigo) {
-          setCodigoCentro(data.codigo);
+        const response = await getCodigoCentro();
+
+        if (response && response.ok) {
+          const data = await response.json();
+          if (data.codigo) {
+            setCodigoCentro(data.codigo);
+          }
+        } else {
+          setCodigoCentro("Error");
         }
       } catch (error) {
         console.error("Error al obtener el código del centro:", error);

@@ -9,52 +9,36 @@ import {
   Button,
   Notification,
   Box,
-  Group,
-  Anchor,
 } from "@mantine/core";
 import { IconLock, IconUser, IconX } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom"; // <-- Importamos useNavigate
+import { useNavigate } from "react-router-dom";
+import { login } from "../../api";
 
 export default function Login({ onLogin }) {
-  const navigate = useNavigate(); // <-- Inicializamos el hook de navegación
+  const navigate = useNavigate();
 
-  // Estados para controlar los inputs
   const [nombre, setNombre] = useState("");
   const [password, setPassword] = useState("");
 
-  // Estados para la interfaz
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // Evita que la página se recargue
+    e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Llamada a tu API de Flask
-      const response = await fetch("http://127.0.0.1:5000/api/usuario/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nombre: nombre,
-          password: password,
-        }),
-      });
+      const response = await login(nombre, password);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Si el login es correcto, pasamos el nombre (y los grados si los necesitas) al estado global
+      if (response && response.ok) {
+        const data = await response.json();
         onLogin(data.nombre);
       } else {
-        // Si el backend devuelve un error (401, 404, etc.)
+        const data = await response.json();
         setError(data.error || "Usuario o contraseña incorrectos");
       }
     } catch (err) {
-      // Si el servidor Flask no responde
       setError(
         "No se pudo conectar con el servidor. Revisa si Flask está corriendo.",
       );

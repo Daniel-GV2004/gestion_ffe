@@ -14,6 +14,7 @@ import {
 import { useForm } from "@mantine/form";
 import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getAlumno, postAlumno, updateAlumno, deleteAlumno } from "../../api";
 
 export default function EditAlumno() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function EditAlumno() {
       localidad: "",
       provincia: "",
       cp: "",
-      curso: "", // Añadido para poder mostrarlo
+      curso: "",
     },
     validate: {
       nombre: (value) => (value.length < 2 ? "El nombre es muy corto" : null),
@@ -45,10 +46,9 @@ export default function EditAlumno() {
     },
   });
 
-  // Cargar datos si estamos editando
   useEffect(() => {
     if (isEditing) {
-      fetch(`http://127.0.0.1:5000/api/alumno/alumnos/${id}`)
+      getAlumno(id)
         .then((res) => res.json())
         .then((data) => {
           if (!data.error) {
@@ -81,20 +81,12 @@ export default function EditAlumno() {
     setLoadingSubmit(true);
     setNotificacion(null);
 
-    // Eliminamos el 'curso' del envío para que el backend lo calcule solo
     const { curso, ...datosAEnviar } = values;
 
     try {
-      const url = isEditing
-        ? `http://127.0.0.1:5000/api/alumno/alumnos/${id}`
-        : "http://127.0.0.1:5000/api/alumno/alumnos";
-      const method = isEditing ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datosAEnviar),
-      });
+      const response = isEditing
+        ? await updateAlumno(id, datosAEnviar)
+        : await postAlumno(datosAEnviar);
 
       const data = await response.json();
 
@@ -132,10 +124,7 @@ export default function EditAlumno() {
 
     setLoadingSubmit(true);
     try {
-      const response = await fetch(
-        `http://127.0.0.1:5000/api/alumno/alumnos/${id}`,
-        { method: "DELETE" },
-      );
+      const response = await deleteAlumno(id);
       if (response.ok) {
         setNotificacion({
           type: "success",
@@ -261,7 +250,6 @@ export default function EditAlumno() {
             />
           </SimpleGrid>
 
-          {/* Mostrar el curso solo si estamos editando (ya que lo genera el backend) */}
           {isEditing && form.values.curso && (
             <>
               <Title order={5} mt="xl" mb="sm" c="dimmed">
