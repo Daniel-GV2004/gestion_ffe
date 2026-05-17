@@ -1,50 +1,72 @@
 from flask import Blueprint, request, jsonify, send_file
+import json
 from core.utils import generar_documento_en_memoria, procesar_anexo_oficial_junta
-from core.models import Practica
+from core.models import Practica 
+from core.constants import etiquetas_centro
 
 bp = Blueprint('repositorio', __name__)
 
 @bp.route('/generar', methods=['POST'])
 def generar_documento():
-    data = request.get_json()
-    
-    if not data or not data.get('docId'):
-        return jsonify({"error": "Faltan datos de la plantilla"}), 400
+    if request.is_json:
+        data = request.get_json()
+        doc_id = data.get('docId')
+        alumno_id = data.get('alumno_id')
+        empresa_id = data.get('empresa_id')
+        practica_id = data.get('practicaId')
+        nombre_profesor = data.get('usuario', {}).get('nombre')
+        archivo_subido = None
+    else:
+        doc_id = request.form.get('docId')
+        alumno_id_raw = request.form.get('alumno_id')
+        alumno_id = json.loads(alumno_id_raw) if alumno_id_raw and '[' in alumno_id_raw else alumno_id_raw
+        empresa_id = request.form.get('empresa_id')
+        practica_id = request.form.get('practicaId') 
+        nombre_profesor = request.form.get('usuario_nombre')
+        archivo_subido = request.files.get('file')
 
-    doc_id = data.get('docId')
-    alumno_id = data.get('alumno_id')
-    empresa_id = data.get('empresa_id')
+    if not doc_id:
+        return jsonify({"error": "Faltan datos de la plantilla"}), 400
 
     documentos_junta = ["Anexo II Plan formativo", "Anexo IV Informe valorativo"]
 
     try:
         if doc_id in documentos_junta:
+            # MOTOR 1: Documentos Oficiales de la Junta (Requiere archivo)
+            if not archivo_subido:
+                return jsonify({"error": "Debes subir el archivo original de la Junta para este anexo"}), 400
+            if not practica_id:
+                return jsonify({"error": "Falta la práctica para generar este anexo"}), 400
             
-            practica = Practica.objects(alumno=alumno_id).first()
-            
-            if not practica:
-                return jsonify({"error": "No se encontró una práctica asociada a este alumno para generar el Anexo"}), 404
-                
-            archivo_memoria, alumno_obj = procesar_anexo_oficial_junta(doc_id, str(practica.id))
-            
+            # Pasamos el archivo en memoria a la función
+            archivo_memoria, alumno_obj = procesar_anexo_oficial_junta(archivo_subido, practica_id)
             nombre_descarga = f"{doc_id.replace(' ', '_')}_{alumno_obj.apellidos}.docx"
 
         else:
+            # MOTOR 2: Tu motor avanzado XML (Lee de la carpeta local)
             datos_bd = {}
+            if practica_id:
+                practica = Practica.objects.get(id=practica_id)
+                if not alumno_id and practica.alumno:
+                    alumno_id = str(practica.alumno.id)
+                if not empresa_id and practica.empresa:
+                    empresa_id = str(practica.empresa.id)
 
             if alumno_id:
-                if isinstance(alumno_id, list):
-                    datos_bd['alumnos'] = alumno_id
-                else:
-                    datos_bd['alumno'] = alumno_id
-
+                datos_bd['alumnos' if isinstance(alumno_id, list) else 'alumno'] = alumno_id
             if empresa_id:
                 datos_bd['empresa'] = empresa_id
 
             if not datos_bd:
-                return jsonify({"error": "Debes proporcionar al menos un alumno o una empresa"}), 400
+                return jsonify({"error": "Debes proporcionar al menos un alumno, empresa o práctica"}), 400
 
-            archivo_memoria = generar_documento_en_memoria(data, datos_bd)
+            data_peticion = {
+                "docId": doc_id,
+                "usuario": {"nombre": nombre_profesor}
+            }
+
+            # Importante: Como tu motor lee de disco, NO le pasamos archivo_subido.
+            archivo_memoria = generar_documento_en_memoria(data_peticion, datos_bd)
             nombre_descarga = f"{doc_id.replace(' ', '_')}.docx"
             
         return send_file(
@@ -57,5 +79,17 @@ def generar_documento():
     except FileNotFoundError as fnf_error:
         return jsonify({"error": str(fnf_error)}), 404
     except Exception as e:
-        print(f"Error generando documento: {str(e)}")
+        print(f"💥 Error generando documento: {str(e)}")
         return jsonify({"error": f"Error interno generando el documento: {str(e)}"}), 500
+
+@bp.route('/codigo-centro', methods=['GET'])
+def get_codigo_centro():
+    try:
+        datos_centro = etiquetas_centro()
+        
+        codigo = datos_centro.get("[CENTRO_CODIGO]", "Código no encontrado")
+        
+        return jsonify({"codigo": codigo}), 200
+        
+    except Exception as e:
+        return jsonify({"error": f"Error obteniendo el código: {str(e)}"}), 500

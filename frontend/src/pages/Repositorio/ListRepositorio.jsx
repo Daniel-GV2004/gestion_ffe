@@ -13,18 +13,27 @@ import {
   MultiSelect,
   Stack,
   Divider,
+  FileInput,
 } from "@mantine/core";
-import { IconFileDescription, IconFileExport } from "@tabler/icons-react";
+import {
+  IconFileDescription,
+  IconFileExport,
+  IconUpload,
+} from "@tabler/icons-react";
 import IframeCaddie from "../../components/IframeCaddie";
 
 export default function ListRepositorio({ nombreProfesor }) {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [docSeleccionado, setDocSeleccionado] = useState(null);
+
   const [opcionesAlumnos, setOpcionesAlumnos] = useState([]);
   const [opcionesEmpresas, setOpcionesEmpresas] = useState([]);
+  const [opcionesPracticas, setOpcionesPracticas] = useState([]);
 
   const [alumnoId, setAlumnoId] = useState(null);
   const [empresaId, setEmpresaId] = useState(null);
+  const [practicaId, setPracticaId] = useState(null);
+  const [archivoPlantilla, setArchivoPlantilla] = useState(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -32,92 +41,144 @@ export default function ListRepositorio({ nombreProfesor }) {
     {
       id: "A6- Solicitud Excepcional",
       nombre: "A6 - Solicitud Excepcional",
+      reqAlumno: true,
+      reqEmpresa: false,
+      reqPractica: false,
       esMulti: true,
     },
     {
       id: "Anexo I Modelo Acuerdo",
       nombre: "Anexo I - Modelo Acuerdo",
-      soloEmpresa: true,
+      reqAlumno: false,
+      reqEmpresa: true,
+      reqPractica: false,
     },
     {
       id: "Anexo I.1 compensación beca",
       nombre: "Anexo I.1 - Compensación Beca",
-      soloAlumno: true,
+      reqAlumno: false,
+      reqEmpresa: false,
+      reqPractica: true,
     },
     {
       id: "Anexo II Plan formativo",
       nombre: "Anexo II - Plan Formativo",
-      soloAlumno: true,
+      reqAlumno: false,
+      reqEmpresa: false,
+      reqPractica: true,
+      reqArchivo: true,
     },
     {
       id: "Anexo III Relación de alumnado",
       nombre: "Anexo III - Relación Alumnado",
+      reqAlumno: true,
+      reqEmpresa: true,
+      reqPractica: false,
       esMulti: true,
     },
     {
       id: "Anexo IV Informe valorativo",
       nombre: "Anexo IV - Informe Valorativo",
-      soloAlumno: true,
+      reqAlumno: false,
+      reqEmpresa: false,
+      reqPractica: true,
+      reqArchivo: true,
     },
     {
       id: "Anexo IX Solicitud Exención FFE",
       nombre: "Anexo IX - Solicitud Exención FFE",
-      soloAlumno: true,
+      reqAlumno: true,
+      reqEmpresa: false,
+      reqPractica: false,
     },
     {
       id: "Anexo V Solicitud inicio FFE-actualizado",
       nombre: "Anexo V - Solicitud Inicio FFE",
-      soloEmpresa: true,
+      reqAlumno: false,
+      reqEmpresa: true,
+      reqPractica: false,
     },
     {
       id: "Anexo VII Solicitud Extraordinaria",
       nombre: "Anexo VII - Solicitud Extraordinaria",
-      soloAlumno: true,
+      reqAlumno: true,
+      reqEmpresa: false,
+      reqPractica: false,
       esMulti: true,
     },
     {
       id: "Anexo VIII Solicitud Modificación FFE",
       nombre: "Anexo VIII - Solicitud Modificación FFE",
+      reqAlumno: false,
+      reqEmpresa: false,
+      reqPractica: true,
     },
     {
       id: "Solicitud no realización",
       nombre: "Solicitud exención",
-      soloAlumno: true,
+      reqAlumno: true,
+      reqEmpresa: false,
+      reqPractica: false,
     },
     {
       id: "Caddie",
       nombre: "Formulario Caddie",
+      reqAlumno: false,
+      reqEmpresa: false,
+      reqPractica: false,
     },
   ];
 
   useEffect(() => {
+    const extraerId = (item) => {
+      if (!item) return "";
+      if (typeof item === "string") return item;
+      if (item.$oid) return String(item.$oid);
+      if (item._id?.$oid) return String(item._id.$oid);
+      return String(item.id || item._id || item);
+    };
+
     const fetchOpciones = async () => {
       try {
         const resA = await fetch("http://127.0.0.1:5000/api/alumno/alumnos");
         const dataA = await resA.json();
         const arrayAlumnos = Array.isArray(dataA) ? dataA : dataA.alumnos || [];
-        setOpcionesAlumnos(
-          arrayAlumnos.map((a) => ({
-            value: a.id || a._id?.$oid || a.nif,
-            label:
-              `${a.nombre || ""} ${a.apellidos || ""} - ${a.nif || ""}`.trim(),
-          })),
-        );
+
+        const alumnosMapeados = arrayAlumnos.map((a) => ({
+          value: extraerId(a),
+          label:
+            `${a.nombre || ""} ${a.apellidos || ""} - ${a.nif || ""}`.trim(),
+        }));
+        setOpcionesAlumnos(alumnosMapeados);
 
         const resE = await fetch("http://127.0.0.1:5000/api/empresa/empresas");
         const dataE = await resE.json();
         const arrayEmpresas = Array.isArray(dataE)
           ? dataE
           : dataE.empresas || [];
-        setOpcionesEmpresas(
-          arrayEmpresas.map((e) => ({
-            value: e.id || e._id?.$oid || e.cif,
-            label:
-              `${e.nombre_empresa || e.nombre || "Empresa"} - ${e.cif || ""}`.trim(),
-          })),
+
+        const empresasMapeadas = arrayEmpresas.map((e) => ({
+          value: extraerId(e),
+          label:
+            `${e.nombre_empresa || e.nombre || "Empresa"} - ${e.cif || ""}`.trim(),
+        }));
+        setOpcionesEmpresas(empresasMapeadas);
+
+        const resP = await fetch(
+          "http://127.0.0.1:5000/api/practica/practicas",
         );
+        const dataP = await resP.json();
+        const arrayPracticas = Array.isArray(dataP)
+          ? dataP
+          : dataP.practicas || [];
+
+        const practicasMapeadas = arrayPracticas.map((p) => ({
+          value: extraerId(p),
+          label: `${p.alumno || "Sin Alumno"} - ${p.empresa || "Sin Empresa"}`,
+        }));
+        setOpcionesPracticas(practicasMapeadas);
       } catch (error) {
-        console.error("Error cargando opciones:", error);
+        console.error(error);
       }
     };
     fetchOpciones();
@@ -127,30 +188,52 @@ export default function ListRepositorio({ nombreProfesor }) {
     setDocSeleccionado(doc);
     setAlumnoId(doc.esMulti ? [] : null);
     setEmpresaId(null);
+    setPracticaId(null);
+    setArchivoPlantilla(null);
     setModalAbierto(true);
   };
 
   const handleGenerar = async () => {
     setLoading(true);
     try {
+      let bodyData;
+      let headersConfig = {};
+
+      if (docSeleccionado.reqArchivo) {
+        const formData = new FormData();
+        formData.append("file", archivoPlantilla);
+        formData.append("docId", docSeleccionado.id);
+        formData.append("usuario_nombre", nombreProfesor);
+        if (alumnoId) formData.append("alumno_id", JSON.stringify(alumnoId));
+        if (empresaId) formData.append("empresa_id", empresaId);
+        if (practicaId) formData.append("practicaId", practicaId);
+        formData.append("es_multi", docSeleccionado.esMulti ? "true" : "false");
+        bodyData = formData;
+      } else {
+        bodyData = JSON.stringify({
+          docId: docSeleccionado.id,
+          alumno_id: alumnoId,
+          empresa_id: empresaId,
+          practicaId: practicaId,
+          es_multi: docSeleccionado.esMulti,
+          usuario: { nombre: nombreProfesor },
+        });
+        headersConfig = { "Content-Type": "application/json" };
+      }
+
       const response = await fetch(
         "http://127.0.0.1:5000/api/repositorio/generar",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            docId: docSeleccionado.id,
-            alumno_id: alumnoId,
-            empresa_id: empresaId,
-            es_multi: docSeleccionado.esMulti,
-            usuario: {
-              nombre: nombreProfesor,
-            },
-          }),
+          headers: headersConfig,
+          body: bodyData,
         },
       );
 
-      if (!response.ok) throw new Error("Error al generar el documento");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Error al generar el documento");
+      }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -169,12 +252,19 @@ export default function ListRepositorio({ nombreProfesor }) {
     }
   };
 
-  const esExclusivoAlumno = docSeleccionado?.soloAlumno;
-  const esExclusivoEmpresa = docSeleccionado?.soloEmpresa;
-  const requiereAmbos = !esExclusivoAlumno && !esExclusivoEmpresa;
-
-  // ✅ Corrección: comparar con el id del objeto, no con un string
   const showCaddie = docSeleccionado?.id === "Caddie";
+
+  const faltanDatos = () => {
+    if (!docSeleccionado) return true;
+    if (docSeleccionado.reqArchivo && !archivoPlantilla) return true;
+    if (docSeleccionado.reqEmpresa && !empresaId) return true;
+    if (docSeleccionado.reqPractica && !practicaId) return true;
+    if (docSeleccionado.reqAlumno) {
+      if (docSeleccionado.esMulti) return !alumnoId || alumnoId.length === 0;
+      return !alumnoId;
+    }
+    return false;
+  };
 
   return (
     <Container size="xl" py="xl">
@@ -207,16 +297,30 @@ export default function ListRepositorio({ nombreProfesor }) {
         opened={modalAbierto}
         onClose={() => setModalAbierto(false)}
         title={<Text fw={700}>Generar: {docSeleccionado?.nombre}</Text>}
-        // ✅ Modal más grande para Caddie, normal para el resto
         size={showCaddie ? "xl" : "md"}
         centered
       >
-        {/* ✅ Si es Caddie, renderiza el iframe; si no, el formulario normal */}
         {showCaddie ? (
           <IframeCaddie />
         ) : (
           <Stack spacing="lg">
-            {(requiereAmbos || esExclusivoEmpresa) && (
+            {docSeleccionado?.reqArchivo && (
+              <>
+                <FileInput
+                  label="Plantilla de Word Oficial (.docx)"
+                  placeholder="Sube el archivo de la Junta..."
+                  required
+                  withAsterisk
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  leftSection={<IconUpload size={16} />}
+                  value={archivoPlantilla}
+                  onChange={setArchivoPlantilla}
+                />
+                <Divider />
+              </>
+            )}
+
+            {docSeleccionado?.reqEmpresa && (
               <Select
                 label="Seleccionar Empresa"
                 placeholder="Busca la empresa..."
@@ -224,22 +328,29 @@ export default function ListRepositorio({ nombreProfesor }) {
                 searchable
                 value={empresaId}
                 onChange={setEmpresaId}
-                nothingFoundMessage="No se encontró la empresa"
               />
             )}
 
-            {requiereAmbos && <Divider label="y" labelPosition="center" />}
+            {docSeleccionado?.reqPractica && (
+              <Select
+                label="Seleccionar Práctica / Acuerdo"
+                placeholder="Busca la práctica..."
+                data={opcionesPracticas}
+                searchable
+                value={practicaId}
+                onChange={setPracticaId}
+              />
+            )}
 
-            {(requiereAmbos || esExclusivoAlumno) &&
-              (docSeleccionado?.esMulti ? (
+            {docSeleccionado?.reqAlumno &&
+              (docSeleccionado.esMulti ? (
                 <MultiSelect
                   label="Seleccionar Alumnos"
-                  placeholder="Selecciona uno o varios alumnos..."
+                  placeholder="Selecciona uno o varios..."
                   data={opcionesAlumnos}
                   searchable
                   value={alumnoId || []}
                   onChange={setAlumnoId}
-                  nothingFoundMessage="No se encontró el alumno"
                 />
               ) : (
                 <Select
@@ -249,7 +360,6 @@ export default function ListRepositorio({ nombreProfesor }) {
                   searchable
                   value={alumnoId}
                   onChange={setAlumnoId}
-                  nothingFoundMessage="No se encontró el alumno"
                 />
               ))}
 
@@ -258,15 +368,11 @@ export default function ListRepositorio({ nombreProfesor }) {
               leftSection={<IconFileExport size={18} />}
               onClick={handleGenerar}
               loading={loading}
-              disabled={
-                ((requiereAmbos || esExclusivoEmpresa) && !empresaId) ||
-                ((requiereAmbos || esExclusivoAlumno) &&
-                  (docSeleccionado?.esMulti
-                    ? alumnoId?.length === 0
-                    : !alumnoId))
-              }
+              disabled={faltanDatos()}
             >
-              Descargar Documento
+              {docSeleccionado?.reqArchivo
+                ? "Rellenar y Descargar"
+                : "Generar Documento"}
             </Button>
           </Stack>
         )}

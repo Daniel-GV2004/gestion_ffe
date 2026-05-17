@@ -7,7 +7,7 @@ import { notifications } from "@mantine/notifications";
 
 const getBasePath = () => {
   if (import.meta.env.MODE === "development")
-    return `http://${window.location.hostname}:5000`;
+    return `http://${window.location.hostname}:8000`;
   return "/api";
 };
 export const BASE_PATH = getBasePath();
@@ -148,39 +148,6 @@ export async function login(login, password) {
     body: JSON.stringify({ login, password }),
     ignoreErrors: [401],
   });
-}
-
-export function parseDates(obj, keys) {
-  const convertToDate = (value) => {
-    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [year, month, day] = value.split("-").map(Number);
-      return new Date(year, month - 1, day); // month es 0-indexed
-    }
-
-    const date = new Date(value);
-    if (isNaN(date)) return null;
-    return date;
-  };
-
-  const parseDatesByKey = (obj, subkeys, index = 0) => {
-    if (!obj) return;
-    if (Array.isArray(obj))
-      return obj.forEach((x) => parseDatesByKey(x, subkeys, index));
-
-    const currentSubkey = subkeys[index];
-    if (!(currentSubkey in obj)) return;
-
-    const currentValue = obj[currentSubkey];
-    if (index < subkeys.length - 1)
-      parseDatesByKey(currentValue, subkeys, index + 1);
-    else {
-      if (Array.isArray(currentValue))
-        obj[currentSubkey] = currentValue.map(convertToDate);
-      else if (currentValue) obj[currentSubkey] = convertToDate(currentValue);
-    }
-  };
-  keys.forEach((key) => parseDatesByKey(obj, key.split(".")));
-  return obj;
 }
 
 export async function getUsers(query, abortSignal) {

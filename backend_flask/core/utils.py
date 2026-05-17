@@ -165,11 +165,17 @@ def generar_documento_en_memoria(datos_peticion, datos_completos_bd):
     memoria.seek(0) 
     return memoria
 
-def procesar_anexo_oficial_junta(doc_id, practica_id):
+def procesar_anexo_oficial_junta(archivo_subido, practica_id):
     """
-    Procesa Anexo II y Anexo IV buscando casillas por proximidad,
-    alimentándose de los datos ya formateados en constants.py.
+    Procesa Anexo II y Anexo IV buscando casillas por proximidad.
+    Utiliza lectura directa del XML para evitar crasheos con celdas combinadas.
     """
+    import io
+    from docx import Document
+    from docx.table import _Cell
+    from core.models import Practica, Alumno, Empresa
+    # from .constants import etiquetas_centro, etiquetas_alumno, etiquetas_empresa, etiquetas_practica
+
     practica = Practica.objects.get(id=practica_id)
     alumno = Alumno.objects.get(id=practica.alumno.id)
     empresa = Empresa.objects.get(id=practica.empresa.id)
@@ -184,71 +190,91 @@ def procesar_anexo_oficial_junta(doc_id, practica_id):
     datos_emp = etiquetas_empresa(empresa_dict)
     datos_prac = etiquetas_practica(practica_dict)
 
-    # 2. Selección de plantilla
-    if doc_id == "Anexo II Plan formativo":
-        ruta_plantilla = os.path.join(PLANTILLAS_DIR, "Anexo_II_Original.docx")
-    elif doc_id == "Anexo IV Informe valorativo":
-        ruta_plantilla = os.path.join(PLANTILLAS_DIR, "Anexo_IV_Original.docx")
-    else:
-        raise ValueError("Documento oficial no soportado")
-
-    doc = Document(ruta_plantilla)
+    doc = Document(archivo_subido)
     seccion_actual = ""
 
-    # 3. Escaneo y rellenado posicional
+    # 2. Escaneo a través del código fuente XML de las tablas
     for table in doc.tables:
-        if not table.rows: continue
+        tbl_xml = table._tbl
         
-        texto_cabecera = table.rows[0].cells[0].text.upper()
+        filas_xml = tbl_xml.xpath('.//w:tr')
+        if not filas_xml: continue
         
-        # Determinar contexto de la sección
+        primeras_celdas = filas_xml[0].xpath('.//w:tc')
+        if not primeras_celdas: continue
+        
+        celda_cabecera = _Cell(primeras_celdas[0], table)
+        texto_cabecera = celda_cabecera.text.upper()
+        
+        # Determinar contexto general de la tabla
         if "PERSONA EN FORMACIÓN" in texto_cabecera or "ALUMNO" in texto_cabecera:
             seccion_actual = "alumno"
-        elif "DATOS IDENTIFICATIVOS DE LA EMPRESA" in texto_cabecera:
+        elif "DATOS IDENTIFICATIVOS DE LA EMPRESA" in texto_cabecera or "DATOS DE LA EMPRESA" in texto_cabecera:
             seccion_actual = "empresa"
-        elif "DATOS IDENTIFICATIVOS DEL CENTRO" in texto_cabecera:
+        elif "DATOS IDENTIFICATIVOS DEL CENTRO" in texto_cabecera or "DATOS DEL CENTRO" in texto_cabecera:
             seccion_actual = "centro"
 
-        for row in table.rows:
-            for i, cell in enumerate(row.cells):
+        # 3. Rellenado celda por celda
+        for tr in filas_xml:
+            celdas_xml = tr.xpath('.//w:tc')
+            
+            for i, tc in enumerate(celdas_xml):
+                cell = _Cell(tc, table) 
                 texto_celda = cell.text.strip().upper()
                 
-                # Si hay una celda a la derecha, es nuestra celda de destino
-                if i + 1 < len(row.cells):
-                    celda_destino = row.cells[i+1]
+                # --- AQUÍ ESTÁ LA MAGIA: DETECTAR SUB-SECCIONES ---
+                # Si en cualquier celda leemos que empieza la parte del tutor, cambiamos la sección
+                if "TUTOR/A DE LA EMPRESA" in texto_celda:
+                    seccion_actual = "tutor_empresa"
+                elif "TUTOR/A DEL CENTRO" in texto_celda:
+                    seccion_actual = "tutor_centro"
+                
+                # Si hay una celda a la derecha, la preparamos como destino
+                if i + 1 < len(celdas_xml):
+                    celda_destino = _Cell(celdas_xml[i+1], table)
                     
                     if seccion_actual == "alumno":
                         if texto_celda == "NOMBRE": celda_destino.text = alumno_dict.get("nombre", "")
                         elif texto_celda == "APELLIDOS": celda_destino.text = alumno_dict.get("apellidos", "")
-                        elif texto_celda in ["NIF", "DNI", "NIE"]: celda_destino.text = datos_al["[NIF]"]
-                        elif texto_celda == "EMAIL": celda_destino.text = datos_al["[EMAIL]"]
-                        elif texto_celda == "TELÉFONO": celda_destino.text = datos_al["[TELEFONO]"]
-                        elif texto_celda == "NUSS": celda_destino.text = datos_al["[NUSS]"]
-                        elif texto_celda == "CURSO": celda_destino.text = datos_prac["[CURSO_PRACTICA]"]
+                        elif texto_celda in ["NIF", "DNI", "NIE"]: celda_destino.text = datos_al.get("[NIF]", "")
+                        elif texto_celda == "EMAIL": celda_destino.text = datos_al.get("[EMAIL]", "")
+                        elif texto_celda == "TELÉFONO": celda_destino.text = datos_al.get("[TELEFONO]", "")
+                        elif texto_celda == "NUSS": celda_destino.text = datos_al.get("[NUSS]", "")
+                        elif texto_celda == "CURSO": celda_destino.text = datos_prac.get("[CURSO_PRACTICA]", "")
                             
                     elif seccion_actual == "empresa":
-                        if texto_celda == "DENOMINACIÓN": celda_destino.text = datos_emp["[EMP_NOMBRE]"]
-                        elif texto_celda == "CIF": celda_destino.text = datos_emp["[EMP_CIF]"]
-                        elif texto_celda == "EMAIL": celda_destino.text = datos_emp["[EMP_EMAIL]"]
-                        elif texto_celda == "TELÉFONO": celda_destino.text = datos_emp["[EMP_TELEFONO]"]
-                        elif texto_celda == "NOMBRE Y APELLIDOS": # Tutor empresa
-                            celda_destino.text = datos_emp["[TUTOR_NOMBRE]"]
+                        if texto_celda in ["DENOMINACIÓN", "EMPRESA U ORGANISMO EQUIPARADO"]: 
+                            celda_destino.text = datos_emp.get("[EMP_NOMBRE]", "")
+                        elif texto_celda == "CIF": 
+                            celda_destino.text = datos_emp.get("[EMP_CIF]", "")
+                        elif texto_celda == "EMAIL": 
+                            celda_destino.text = datos_emp.get("[EMP_EMAIL]", "")
+                        elif texto_celda == "TELÉFONO": 
+                            celda_destino.text = datos_emp.get("[EMP_TELEFONO]", "")
+
+                    # --- NUEVA SECCIÓN EXCLUSIVA PARA EL TUTOR ---
+                    elif seccion_actual == "tutor_empresa":
+                        if texto_celda == "NOMBRE Y APELLIDOS": 
+                            celda_destino.text = datos_emp.get("[TUTOR_NOMBRE]", "")
+                        elif texto_celda == "EMAIL": 
+                            celda_destino.text = datos_emp.get("[TUTOR_EMAIL]", "") # Ahora sí, el correo correcto
 
                     elif seccion_actual == "centro":
-                        if texto_celda == "CENTRO EDUCATIVO": celda_destino.text = datos_centro["[CENTRO_NOMBRE]"]
-                        elif texto_celda == "CÓDIGO": celda_destino.text = datos_centro["[CENTRO_CODIGO]"]
-                        elif texto_celda == "CIF": celda_destino.text = datos_centro["[CENTRO_NIF]"]
-                        elif texto_celda == "EMAIL": celda_destino.text = datos_centro["[CENTRO_EMAIL]"]
-                        elif texto_celda == "TELÉFONO": celda_destino.text = datos_centro["[CENTRO_TELEFONO]"]
+                        if texto_celda == "CENTRO EDUCATIVO": celda_destino.text = datos_centro.get("[CENTRO_NOMBRE]", "")
+                        elif texto_celda == "CÓDIGO": celda_destino.text = datos_centro.get("[CENTRO_CODIGO]", "")
+                        elif texto_celda == "CIF": celda_destino.text = datos_centro.get("[CENTRO_NIF]", "")
+                        elif texto_celda == "EMAIL": celda_destino.text = datos_centro.get("[CENTRO_EMAIL]", "")
+                        elif texto_celda == "TELÉFONO": celda_destino.text = datos_centro.get("[CENTRO_TELEFONO]", "")
 
-                # Lógica de Checkboxes (reemplazo de caracteres)
+                # Lógica de Checkboxes (reemplazo de caracteres en la celda actual)
                 if "EN UNA EMPRESA" in texto_celda and "☐" in cell.text:
                     cell.text = cell.text.replace("☐", "☒")
                 if "NO" in texto_celda and "exención" in cell.text.lower() and "☐" in cell.text:
                     cell.text = cell.text.replace("☐", "☒")
 
-    # 4. Guardado final en memoria
+    # 4. Guardado final en memoria RAM
     memoria = io.BytesIO()
     doc.save(memoria)
     memoria.seek(0)
+    
     return memoria, alumno
