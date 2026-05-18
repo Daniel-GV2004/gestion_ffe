@@ -3,11 +3,13 @@ from core.models import Usuario
 from mongoengine.errors import NotUniqueError, ValidationError as MongoValidationError
 from bson.errors import InvalidId
 from marshmallow import ValidationError
-from .schema import usuario_schema, usuarios_schema
+from .schema import usuario_schema
+from core.utils import token_required
 
 bp = Blueprint('usuario', __name__)
 
 @bp.route('/login', methods=['POST'])
+@token_required
 def login():
     data = request.get_json()
     
@@ -28,6 +30,7 @@ def login():
 
 
 @bp.route('/register', methods=['POST'])
+@token_required
 def register():
     try:
         data = usuario_schema.load(request.get_json())
@@ -48,6 +51,7 @@ def register():
 
 
 @bp.route('/usuarios', methods=['GET'])
+@token_required
 def get_usuarios():
     usuarios = Usuario.objects.all()
     result = []
@@ -60,6 +64,7 @@ def get_usuarios():
 
 
 @bp.route('/usuarios/<id>', methods=['GET'])
+@token_required
 def get_usuario(id):
     try:
         user = Usuario.objects(id=id).first()
@@ -75,6 +80,7 @@ def get_usuario(id):
 
 
 @bp.route('/usuarios/<id>', methods=['PUT'])
+@token_required
 def update_usuario(id):
     data = request.get_json()
     
@@ -104,6 +110,7 @@ def update_usuario(id):
 
 
 @bp.route('/usuarios/<id>', methods=['DELETE'])
+@token_required
 def delete_usuario(id):
     try:
         user = Usuario.objects(id=id).first()

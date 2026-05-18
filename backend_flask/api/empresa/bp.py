@@ -4,16 +4,19 @@ from core.models import Empresa
 from mongoengine.errors import ValidationError
 from bson.errors import InvalidId
 from core.constants import etiquetas_centro
+from core.utils import token_required
 
 bp = Blueprint('empresa', __name__)
 
 @bp.route('/empresas', methods=['GET'])
+@token_required
 def get_empresas():
     empresas = Empresa.objects.all()
     result = empresas_schema.dump(empresas)
     return jsonify(result), 200
 
 @bp.route('/empresas', methods=['POST'])
+@token_required
 def create_empresa():
     json_data = request.get_json()
     
@@ -46,6 +49,7 @@ def create_empresa():
         return jsonify({"error": str(e)}), 500
     
 @bp.route('/empresas/<id>', methods=['GET'])
+@token_required
 def get_empresa(id):
     try:
         empresa = Empresa.objects(id=id).first()
@@ -58,6 +62,7 @@ def get_empresa(id):
 
 
 @bp.route('/empresas/<id>', methods=['PUT'])
+@token_required
 def update_empresa(id):
     try:
         empresa = Empresa.objects(id=id).first()
@@ -77,6 +82,7 @@ def update_empresa(id):
 
 
 @bp.route('/empresas/<id>', methods=['DELETE'])
+@token_required
 def delete_empresa(id):
     try:
         empresa = Empresa.objects(id=id).first()

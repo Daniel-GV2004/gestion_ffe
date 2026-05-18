@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify, send_file
 import json
-from core.utils import generar_documento_en_memoria, procesar_anexo_oficial_junta
+from .utils import generar_documento_en_memoria, procesar_anexo_oficial_junta
 from core.models import Practica 
 from core.constants import etiquetas_centro
+from core.utils import token_required
 
 bp = Blueprint('repositorio', __name__)
 
 @bp.route('/generar', methods=['POST'])
+@token_required
 def generar_documento():
     if request.is_json:
         data = request.get_json()
@@ -83,6 +85,7 @@ def generar_documento():
         return jsonify({"error": f"Error interno generando el documento: {str(e)}"}), 500
 
 @bp.route('/codigo-centro', methods=['GET'])
+@token_required
 def get_codigo_centro():
     try:
         datos_centro = etiquetas_centro()

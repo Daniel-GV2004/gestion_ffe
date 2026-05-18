@@ -4,10 +4,12 @@ from core.models import Practica, Alumno, Empresa
 from bson import ObjectId
 from bson.errors import InvalidId
 from mongoengine.errors import ValidationError
+from core.utils import token_required
 
 bp = Blueprint('practica', __name__)
 
 @bp.route('/practicas', methods=['GET'])
+@token_required
 def get_practicas():
     practicas = Practica.objects.all().select_related(2)
     
@@ -22,6 +24,7 @@ def get_practicas():
     return jsonify(result), 200
 
 @bp.route('/practicas', methods=['POST'])
+@token_required
 def create_practica():
     json_data = request.get_json()
     
@@ -46,6 +49,7 @@ def create_practica():
     
 
 @bp.route('/practicas/<id>', methods=['GET'])
+@token_required
 def get_practica(id):
     try:
         practica = Practica.objects(id=id).first()
@@ -64,6 +68,7 @@ def get_practica(id):
 
 
 @bp.route('/practicas/<id>', methods=['PUT'])
+@token_required
 def update_practica(id):
     try:
         practica = Practica.objects(id=id).first()
@@ -86,6 +91,7 @@ def update_practica(id):
 
 
 @bp.route('/practicas/<id>', methods=['DELETE'])
+@token_required
 def delete_practica(id):
     try:
         practica = Practica.objects(id=id).first()

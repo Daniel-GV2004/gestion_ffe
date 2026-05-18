@@ -21,3 +21,7 @@ try:
 except Exception as e:
     print(f"❌ Error al conectar a MongoDB: {e}")
     db = None
+
+SECRET_KEY = "tu_clave_secreta_super_segura"
+ALGORITHM = "HS256"
+SESSION_DURATION_HOURS = 2

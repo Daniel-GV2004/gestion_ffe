@@ -5,16 +5,19 @@ from mongoengine.errors import ValidationError
 from bson.errors import InvalidId
 from mongoengine.errors import NotUniqueError
 from .utils import calcular_curso
+from core.utils import token_required
 
 bp = Blueprint('alumno', __name__)
 
 @bp.route('/alumnos', methods=['GET'])
+@token_required
 def get_alumnos():
     alumnos = Alumno.objects.all()
     result = alumnos_schema.dump(alumnos)
     return jsonify(result), 200
 
 @bp.route('/alumnos', methods=['POST'])
+@token_required
 def create_alumno():
     json_data = request.get_json()
     
@@ -46,6 +49,7 @@ def create_alumno():
         return jsonify({"error": str(e)}), 500
     
 @bp.route('/alumnos/<id>', methods=['GET'])
+@token_required
 def get_alumno(id):
     try:
         alumno = Alumno.objects(id=id).first()
@@ -59,6 +63,7 @@ def get_alumno(id):
         return jsonify({"error": "ID inválido"}), 400
 
 @bp.route('/alumnos/<id>', methods=['PUT'])
+@token_required
 def update_alumno(id):
     try:
         alumno = Alumno.objects(id=id).first()
@@ -83,6 +88,7 @@ def update_alumno(id):
         return jsonify({"error": str(e)}), 400
 
 @bp.route('/alumnos/<id>', methods=['DELETE'])
+@token_required
 def delete_alumno(id):
     try:
         alumno = Alumno.objects(id=id).first()

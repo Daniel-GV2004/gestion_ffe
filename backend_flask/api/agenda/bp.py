@@ -3,16 +3,19 @@ from .schema import agenda_schema, agendas_schema
 from core.models import Agenda
 from mongoengine.errors import ValidationError, NotUniqueError
 from bson.errors import InvalidId
+from core.utils import token_required
 
 bp = Blueprint('agenda', __name__)
 
 @bp.route('/', methods=['GET'])
+@token_required
 def get_agendas():
     agendas = Agenda.objects.all()
     result = agendas_schema.dump(agendas)
     return jsonify(result), 200
 
 @bp.route('/', methods=['POST'])
+@token_required
 def create_agenda():
     json_data = request.get_json()
     
@@ -35,6 +38,7 @@ def create_agenda():
         return jsonify({"error": str(e)}), 500
     
 @bp.route('/<id>', methods=['GET'])
+@token_required
 def get_agenda(id):
     try:
         agenda = Agenda.objects(id=id).first()
@@ -46,6 +50,7 @@ def get_agenda(id):
         return jsonify({"error": "ID inválido"}), 400
 
 @bp.route('/<id>', methods=['PUT'])
+@token_required
 def update_agenda(id):
     try:
         agenda = Agenda.objects(id=id).first()
@@ -72,6 +77,7 @@ def update_agenda(id):
         return jsonify({"error": str(e)}), 500
 
 @bp.route('/<id>', methods=['DELETE'])
+@token_required
 def delete_agenda(id):
     try:
         agenda = Agenda.objects(id=id).first()
