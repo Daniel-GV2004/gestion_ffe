@@ -10,7 +10,7 @@ bp = Blueprint('practica', __name__)
 
 @bp.route('/practicas', methods=['GET'])
 @token_required
-def get_practicas():
+def get_practicas(current_user_id):
     practicas = Practica.objects.all().select_related(2)
     
     result = []
@@ -25,7 +25,7 @@ def get_practicas():
 
 @bp.route('/practicas', methods=['POST'])
 @token_required
-def create_practica():
+def create_practica(current_user_id):
     json_data = request.get_json()
     
     errors = practica_schema.validate(json_data)
@@ -50,7 +50,7 @@ def create_practica():
 
 @bp.route('/practicas/<id>', methods=['GET'])
 @token_required
-def get_practica(id):
+def get_practica(current_user_id, id):
     try:
         practica = Practica.objects(id=id).first()
         if not practica:
@@ -69,7 +69,7 @@ def get_practica(id):
 
 @bp.route('/practicas/<id>', methods=['PUT'])
 @token_required
-def update_practica(id):
+def update_practica(current_user_id, id):
     try:
         practica = Practica.objects(id=id).first()
         if not practica:
@@ -92,7 +92,7 @@ def update_practica(id):
 
 @bp.route('/practicas/<id>', methods=['DELETE'])
 @token_required
-def delete_practica(id):
+def delete_practica(current_user_id, id):
     try:
         practica = Practica.objects(id=id).first()
         if not practica:

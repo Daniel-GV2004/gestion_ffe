@@ -10,14 +10,14 @@ bp = Blueprint('empresa', __name__)
 
 @bp.route('/empresas', methods=['GET'])
 @token_required
-def get_empresas():
+def get_empresas(current_user_id):
     empresas = Empresa.objects.all()
     result = empresas_schema.dump(empresas)
     return jsonify(result), 200
 
 @bp.route('/empresas', methods=['POST'])
 @token_required
-def create_empresa():
+def create_empresa(current_user_id):
     json_data = request.get_json()
     
     datos_centro = etiquetas_centro()
@@ -50,7 +50,7 @@ def create_empresa():
     
 @bp.route('/empresas/<id>', methods=['GET'])
 @token_required
-def get_empresa(id):
+def get_empresa(current_user_id, id):
     try:
         empresa = Empresa.objects(id=id).first()
         if not empresa:
@@ -63,7 +63,7 @@ def get_empresa(id):
 
 @bp.route('/empresas/<id>', methods=['PUT'])
 @token_required
-def update_empresa(id):
+def update_empresa(current_user_id, id):
     try:
         empresa = Empresa.objects(id=id).first()
         if not empresa:
@@ -83,7 +83,7 @@ def update_empresa(id):
 
 @bp.route('/empresas/<id>', methods=['DELETE'])
 @token_required
-def delete_empresa(id):
+def delete_empresa(current_user_id, id):
     try:
         empresa = Empresa.objects(id=id).first()
         if not empresa:

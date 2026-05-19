@@ -111,9 +111,16 @@ export default function EditEmpresa() {
       setTimeout(() => navigate("/empresas"), 1500);
     } catch (error) {
       const data = error.response?.data;
+
+      let mensajeError = data?.error || data?.errores || "Error al guardar";
+
+      if (typeof mensajeError === "object" && mensajeError !== null) {
+        mensajeError = Object.values(mensajeError).join(" | ");
+      }
+
       setNotificacion({
         type: "error",
-        message: data?.error || data?.errores || "Error al guardar",
+        message: mensajeError,
       });
     } finally {
       setLoadingSubmit(false);

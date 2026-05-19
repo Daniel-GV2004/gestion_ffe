@@ -9,7 +9,7 @@ bp = Blueprint('repositorio', __name__)
 
 @bp.route('/generar', methods=['POST'])
 @token_required
-def generar_documento():
+def generar_documento(current_user_id):
     if request.is_json:
         data = request.get_json()
         doc_id = data.get('docId')
@@ -86,7 +86,7 @@ def generar_documento():
 
 @bp.route('/codigo-centro', methods=['GET'])
 @token_required
-def get_codigo_centro():
+def get_codigo_centro(current_user_id):
     try:
         datos_centro = etiquetas_centro()
         

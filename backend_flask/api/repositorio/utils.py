@@ -15,7 +15,7 @@ from core.constants import (
 )
 from core.models import Practica, Alumno, Empresa
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PLANTILLAS_DIR = os.path.join(BASE_DIR, 'plantillas_word')
 
 def realizar_sustitucion_profunda(elemento_xml, mapeo):

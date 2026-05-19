@@ -33,7 +33,10 @@ function App() {
       try {
         const auth = JSON.parse(authData);
         if (auth && auth.nombre) {
-          return { name: auth.nombre };
+          return {
+            name: auth.nombre,
+            id: auth.id || auth._id?.$oid || auth._id,
+          };
         }
       } catch (e) {
         localStorage.removeItem("auth");
@@ -43,7 +46,20 @@ function App() {
   });
 
   const handleLogin = (nombre) => {
-    setUser({ name: nombre });
+    const authData = localStorage.getItem("auth");
+    if (authData) {
+      try {
+        const auth = JSON.parse(authData);
+        setUser({
+          name: auth.nombre,
+          id: auth.id || auth._id?.$oid || auth._id,
+        });
+        return;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    setUser({ name: nombre, id: null });
   };
 
   const handleLogout = () => {

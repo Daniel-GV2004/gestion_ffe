@@ -3,6 +3,7 @@ import datetime
 from flask import Blueprint, request, jsonify, current_app
 from core.models import Usuario
 from core.utils import token_required
+from core.config import SECRET_KEY
 
 bp = Blueprint('auth', __name__)
 
@@ -25,7 +26,11 @@ def login():
         }
         
         # Encriptamos el token con la clave secreta de la app
-        token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+        token = jwt.encode(
+            payload, 
+            current_app.config.get('SECRET_KEY', 'una_clave_secreta_por_defecto_12345'), 
+            algorithm='HS256'
+        )
         
         return jsonify({
             "mensaje": "Login exitoso",

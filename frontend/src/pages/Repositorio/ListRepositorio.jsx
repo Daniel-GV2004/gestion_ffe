@@ -47,9 +47,9 @@ export default function ListRepositorio({ nombreProfesor }) {
     {
       id: "A6- Solicitud Excepcional",
       nombre: "A6 - Solicitud Excepcional",
-      reqAlumno: true,
+      reqAlumno: false,
       reqEmpresa: false,
-      reqPractica: false,
+      reqPractica: true,
       esMulti: true,
     },
     {
@@ -218,14 +218,15 @@ export default function ListRepositorio({ nombreProfesor }) {
         formData.append("es_multi", docSeleccionado.esMulti ? "true" : "false");
         bodyData = formData;
       } else {
-        bodyData = JSON.stringify({
+        // Objeto puro para Axios
+        bodyData = {
           docId: docSeleccionado.id,
           alumno_id: alumnoId,
           empresa_id: empresaId,
           practicaId: practicaId,
           es_multi: docSeleccionado.esMulti,
           usuario: { nombre: nombreProfesor },
-        });
+        };
       }
 
       const response = await generarDocumento(bodyData, isFormData);
@@ -241,7 +242,9 @@ export default function ListRepositorio({ nombreProfesor }) {
       setModalAbierto(false);
     } catch (error) {
       console.error(error);
-      alert("Error al generar el documento");
+      const mensaje =
+        error.response?.data?.error || "Error al generar el documento";
+      alert(mensaje);
     } finally {
       setLoading(false);
     }

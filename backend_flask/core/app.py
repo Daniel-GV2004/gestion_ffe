@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from mongoengine import connect
+from core.config import SECRET_KEY
 
 from flask import Flask
 from flask_cors import CORS
@@ -14,6 +15,8 @@ from api.auth.bp import bp as auth_bp
 
 app = Flask(__name__)
 CORS(app)
+
+app.config['SECRET_KEY'] = SECRET_KEY
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/gestion_ffe")

@@ -9,14 +9,14 @@ bp = Blueprint('agenda', __name__)
 
 @bp.route('/', methods=['GET'])
 @token_required
-def get_agendas():
+def get_agendas(current_user_id):
     agendas = Agenda.objects.all()
     result = agendas_schema.dump(agendas)
     return jsonify(result), 200
 
 @bp.route('/', methods=['POST'])
 @token_required
-def create_agenda():
+def create_agenda(current_user_id):
     json_data = request.get_json()
     
     errors = agenda_schema.validate(json_data)
@@ -39,7 +39,7 @@ def create_agenda():
     
 @bp.route('/<id>', methods=['GET'])
 @token_required
-def get_agenda(id):
+def get_agenda(current_user_id, id):
     try:
         agenda = Agenda.objects(id=id).first()
         if not agenda:
@@ -51,7 +51,7 @@ def get_agenda(id):
 
 @bp.route('/<id>', methods=['PUT'])
 @token_required
-def update_agenda(id):
+def update_agenda(current_user_id, id):
     try:
         agenda = Agenda.objects(id=id).first()
         if not agenda:
@@ -78,7 +78,7 @@ def update_agenda(id):
 
 @bp.route('/<id>', methods=['DELETE'])
 @token_required
-def delete_agenda(id):
+def delete_agenda(current_user_id, id):
     try:
         agenda = Agenda.objects(id=id).first()
         

@@ -11,14 +11,14 @@ bp = Blueprint('alumno', __name__)
 
 @bp.route('/alumnos', methods=['GET'])
 @token_required
-def get_alumnos():
+def get_alumnos(current_user_id):
     alumnos = Alumno.objects.all()
     result = alumnos_schema.dump(alumnos)
     return jsonify(result), 200
 
 @bp.route('/alumnos', methods=['POST'])
 @token_required
-def create_alumno():
+def create_alumno(current_user_id):
     json_data = request.get_json()
     
     # 1. Validar
@@ -50,7 +50,7 @@ def create_alumno():
     
 @bp.route('/alumnos/<id>', methods=['GET'])
 @token_required
-def get_alumno(id):
+def get_alumno(current_user_id, id):
     try:
         alumno = Alumno.objects(id=id).first()
         if not alumno:
@@ -64,7 +64,7 @@ def get_alumno(id):
 
 @bp.route('/alumnos/<id>', methods=['PUT'])
 @token_required
-def update_alumno(id):
+def update_alumno(current_user_id, id):
     try:
         alumno = Alumno.objects(id=id).first()
         if not alumno:
@@ -89,7 +89,7 @@ def update_alumno(id):
 
 @bp.route('/alumnos/<id>', methods=['DELETE'])
 @token_required
-def delete_alumno(id):
+def delete_alumno(current_user_id, id):
     try:
         alumno = Alumno.objects(id=id).first()
         

@@ -39,7 +39,7 @@ const Inicio = ({ user }) => {
 
       if (res && res.data) {
         const eventosFormateados = res.data.map((evento) => ({
-          id: evento.id,
+          id: evento.id || evento._id?.$oid || evento._id,
           title: evento.nombre,
           start: evento.fecha,
           end: evento.fecha_fin,
@@ -91,8 +91,11 @@ const Inicio = ({ user }) => {
       fecha_fin: formData.fecha_fin
         ? new Date(formData.fecha_fin).toISOString()
         : null,
-      usuario: user.name,
     };
+
+    if (!isEditing) {
+      payload.usuario = user.id || user.name;
+    }
 
     try {
       if (isEditing) {
