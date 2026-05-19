@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 import { IconUserPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import { getAlumnos } from "../../api";
+import { getAlumnos } from "../../API";
 
 export default function Alumnos() {
   const [datos, setDatos] = useState([]);
@@ -22,16 +22,13 @@ export default function Alumnos() {
 
   useEffect(() => {
     getAlumnos()
-      .then(async (res) => {
-        if (res && res.ok) {
-          const data = await res.json();
-          setDatos(Array.isArray(data) ? data : []);
-        } else {
-          setDatos([]);
-        }
+      .then((res) => {
+        const data = res.data;
+        setDatos(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error("Error cargando alumnos:", err);
+        setDatos([]);
       })
       .finally(() => {
         setLoading(false);
@@ -50,7 +47,7 @@ export default function Alumnos() {
 
   const ths = (
     <Table.Tr>
-      <Table.Th style={{ width: 50 }}></Table.Th>{" "}
+      <Table.Th style={{ width: 50 }}></Table.Th>
       {columnas.map((col) => (
         <Table.Th key={col} style={{ textTransform: "uppercase" }}>
           {col.replace(/_/g, " ")}

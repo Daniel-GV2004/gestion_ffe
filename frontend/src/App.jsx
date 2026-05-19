@@ -22,26 +22,34 @@ import EditPractica from "./pages/Practica/EditPractica";
 import Usuarios from "./pages/Usuario/ListUsuario";
 import EditUsuario from "./pages/Usuario/EditUsuario";
 import ListRepositorio from "./pages/Repositorio/ListRepositorio";
-import IframeCaddie from "./components/IframeCaddie.jsx";
 
 function App() {
   const [opened, { toggle }] = useDisclosure();
   const navigate = useNavigate();
 
   const [user, setUser] = useState(() => {
-    const usuarioGuardado = localStorage.getItem("usuario_crm");
-    return usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+    const authData = localStorage.getItem("auth");
+    if (authData) {
+      try {
+        const auth = JSON.parse(authData);
+        if (auth && auth.nombre) {
+          return { name: auth.nombre };
+        }
+      } catch (e) {
+        localStorage.removeItem("auth");
+      }
+    }
+    return null;
   });
 
   const handleLogin = (nombre) => {
-    const datosUsuario = { name: nombre };
-    setUser(datosUsuario);
-    localStorage.setItem("usuario_crm", JSON.stringify(datosUsuario));
+    setUser({ name: nombre });
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem("usuario_crm");
+    localStorage.removeItem("auth");
+    localStorage.removeItem("userName");
     navigate("/");
   };
 

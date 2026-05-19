@@ -14,7 +14,7 @@ import {
 import { useForm } from "@mantine/form";
 import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getAlumno, postAlumno, updateAlumno, deleteAlumno } from "../../api";
+import { getAlumno, postAlumno, updateAlumno, deleteAlumno } from "../../API";
 
 export default function EditAlumno() {
   const navigate = useNavigate();
@@ -49,29 +49,29 @@ export default function EditAlumno() {
   useEffect(() => {
     if (isEditing) {
       getAlumno(id)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.error) {
-            form.setValues({
-              nombre: data.nombre || "",
-              apellidos: data.apellidos || "",
-              nif: data.nif || "",
-              email: data.email || "",
-              telefono: data.telefono || "",
-              nuss: data.nuss || "",
-              direccion: data.direccion || "",
-              localidad: data.localidad || "",
-              provincia: data.provincia || "",
-              cp: data.cp || "",
-              curso: data.curso || "",
-            });
-          } else {
-            setNotificacion({ type: "error", message: data.error });
-          }
+        .then((res) => {
+          const data = res.data;
+          form.setValues({
+            nombre: data.nombre || "",
+            apellidos: data.apellidos || "",
+            nif: data.nif || "",
+            email: data.email || "",
+            telefono: data.telefono || "",
+            nuss: data.nuss || "",
+            direccion: data.direccion || "",
+            localidad: data.localidad || "",
+            provincia: data.provincia || "",
+            cp: data.cp || "",
+            curso: data.curso || "",
+          });
           setLoadingData(false);
         })
         .catch((err) => {
-          setNotificacion({ type: "error", message: "Error al cargar datos" });
+          console.error(err);
+          setNotificacion({
+            type: "error",
+            message: err.response?.data?.error || "Error al cargar datos",
+          });
           setLoadingData(false);
         });
     }
@@ -88,26 +88,23 @@ export default function EditAlumno() {
         ? await updateAlumno(id, datosAEnviar)
         : await postAlumno(datosAEnviar);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setNotificacion({
-          type: "success",
-          message: isEditing
-            ? "Alumno actualizado con éxito"
-            : "Alumno guardado con éxito",
-        });
-        setTimeout(() => navigate("/alumnos"), 1500);
-      } else {
-        setNotificacion({
-          type: "error",
-          message: data.error || data.errores || "Error al guardar",
-        });
-      }
+      setNotificacion({
+        type: "success",
+        message: isEditing
+          ? "Alumno actualizado con éxito"
+          : "Alumno guardado con éxito",
+      });
+      setTimeout(() => navigate("/alumnos"), 1500);
     } catch (error) {
+      console.error(error);
+      const errorMsg =
+        error.response?.data?.error ||
+        error.response?.data?.errores ||
+        "Error al guardar";
       setNotificacion({
         type: "error",
-        message: "No se pudo conectar con el servidor",
+        message:
+          typeof errorMsg === "object" ? JSON.stringify(errorMsg) : errorMsg,
       });
     } finally {
       setLoadingSubmit(false);
@@ -124,19 +121,18 @@ export default function EditAlumno() {
 
     setLoadingSubmit(true);
     try {
-      const response = await deleteAlumno(id);
-      if (response.ok) {
-        setNotificacion({
-          type: "success",
-          message: "Alumno eliminado correctamente",
-        });
-        setTimeout(() => navigate("/alumnos"), 1500);
-      } else {
-        setNotificacion({ type: "error", message: "Error al eliminar" });
-        setLoadingSubmit(false);
-      }
+      await deleteAlumno(id);
+      setNotificacion({
+        type: "success",
+        message: "Alumno eliminado correctamente",
+      });
+      setTimeout(() => navigate("/alumnos"), 1500);
     } catch (err) {
-      setNotificacion({ type: "error", message: "Error de conexión" });
+      console.error(err);
+      setNotificacion({
+        type: "error",
+        message: err.response?.data?.error || "Error al eliminar",
+      });
       setLoadingSubmit(false);
     }
   };

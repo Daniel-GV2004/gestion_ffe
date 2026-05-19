@@ -19,7 +19,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
 import "@mantine/dates/styles.css";
-import { getAgendas, postAgenda, updateAgenda, deleteAgenda } from "../../api";
+import { getAgendas, postAgenda, updateAgenda, deleteAgenda } from "../../API";
 
 const Inicio = ({ user }) => {
   const [eventos, setEventos] = useState([]);
@@ -36,9 +36,9 @@ const Inicio = ({ user }) => {
   const cargarEventos = async () => {
     try {
       const res = await getAgendas();
-      if (res && res.ok) {
-        const data = await res.json();
-        const eventosFormateados = data.map((evento) => ({
+
+      if (res && res.data) {
+        const eventosFormateados = res.data.map((evento) => ({
           id: evento.id,
           title: evento.nombre,
           start: evento.fecha,
@@ -51,7 +51,7 @@ const Inicio = ({ user }) => {
         setEventos(eventosFormateados);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error al cargar la agenda:", err);
     }
   };
 
@@ -95,16 +95,15 @@ const Inicio = ({ user }) => {
     };
 
     try {
-      const res = isEditing
-        ? await updateAgenda(formData.id, payload)
-        : await postAgenda(payload);
-
-      if (res && res.ok) {
-        cargarEventos();
-        close();
+      if (isEditing) {
+        await updateAgenda(formData.id, payload);
+      } else {
+        await postAgenda(payload);
       }
+      cargarEventos();
+      close();
     } catch (error) {
-      console.error(error);
+      console.error("Error al guardar:", error);
     }
   };
 
@@ -112,14 +111,11 @@ const Inicio = ({ user }) => {
     if (!window.confirm("¿Estás seguro de eliminar este evento?")) return;
 
     try {
-      const res = await deleteAgenda(formData.id);
-
-      if (res && res.ok) {
-        cargarEventos();
-        close();
-      }
+      await deleteAgenda(formData.id);
+      cargarEventos();
+      close();
     } catch (error) {
-      console.error(error);
+      console.error("Error al eliminar:", error);
     }
   };
 

@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 import { IconLock, IconUser, IconX } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../../api";
+import { login } from "../../API";
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate();
@@ -30,18 +30,20 @@ export default function Login({ onLogin }) {
 
     try {
       const response = await login(nombre, password);
+      const data = response.data;
 
-      if (response && response.ok) {
-        const data = await response.json();
-        onLogin(data.nombre);
-      } else {
-        const data = await response.json();
-        setError(data.error || "Usuario o contraseña incorrectos");
-      }
+      localStorage.setItem("auth", JSON.stringify(data));
+
+      onLogin(data.nombre);
+      navigate("/");
     } catch (err) {
-      setError(
-        "No se pudo conectar con el servidor. Revisa si Flask está corriendo.",
-      );
+      if (err.response) {
+        setError(err.response.data.error || "Usuario o contraseña incorrectos");
+      } else {
+        setError(
+          "No se pudo conectar con el servidor. Revisa si Flask está corriendo.",
+        );
+      }
     } finally {
       setLoading(false);
     }

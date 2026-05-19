@@ -16,7 +16,6 @@ export const OPCIONES_GRADOS = [
   },
 ];
 
-// Si en el futuro necesitas opciones para los ciclos en las prácticas, las metes aquí:
 export const CURSOS_PRACTICAS = [
   { value: "Primero", label: "Primer Curso" },
   { value: "Segundo", label: "Segundo Curso" },

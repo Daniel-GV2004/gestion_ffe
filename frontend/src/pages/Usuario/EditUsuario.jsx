@@ -20,7 +20,7 @@ import {
 } from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
-import { getUsuario, registerUsuario, updateUsuario } from "../../api";
+import { getUsuario, registerUsuario, updateUsuario } from "../../API";
 
 export default function EditUsuario() {
   const navigate = useNavigate();
@@ -58,27 +58,18 @@ export default function EditUsuario() {
   useEffect(() => {
     if (isEditing) {
       getUsuario(id)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.error) {
-            form.setValues({
-              nombre: data.nombre || "",
-              password: "",
-              grados: data.grados || [],
-            });
-          } else {
-            notifications.show({
-              title: "Error",
-              message: data.error,
-              color: "red",
-              icon: <IconX />,
-            });
-          }
+        .then((res) => {
+          const data = res.data;
+          form.setValues({
+            nombre: data.nombre || "",
+            password: "",
+            grados: data.grados || [],
+          });
         })
-        .catch(() => {
+        .catch((err) => {
           notifications.show({
             title: "Error",
-            message: "Error al conectar",
+            message: err.response?.data?.error || "Error al conectar",
             color: "red",
             icon: <IconX />,
           });
@@ -90,31 +81,24 @@ export default function EditUsuario() {
   const handleSubmit = async (values) => {
     setLoadingSubmit(true);
     try {
-      const response = isEditing
-        ? await updateUsuario(id, values)
-        : await registerUsuario(values.nombre, values.password, values.grados);
-
-      if (response.ok) {
-        notifications.show({
-          title: "Éxito",
-          message: isEditing ? "Usuario actualizado" : "Usuario creado",
-          color: "teal",
-          icon: <IconCheck />,
-        });
-        setTimeout(() => navigate("/usuarios"), 1500);
+      if (isEditing) {
+        await updateUsuario(id, values);
       } else {
-        const data = await response.json();
-        notifications.show({
-          title: "Error",
-          message: data.error || "Error al guardar",
-          color: "red",
-          icon: <IconX />,
-        });
+        await registerUsuario(values.nombre, values.password, values.grados);
       }
+
+      notifications.show({
+        title: "Éxito",
+        message: isEditing ? "Usuario actualizado" : "Usuario creado",
+        color: "teal",
+        icon: <IconCheck />,
+      });
+      setTimeout(() => navigate("/usuarios"), 1500);
     } catch (error) {
+      const data = error.response?.data;
       notifications.show({
         title: "Error",
-        message: "Fallo de conexión",
+        message: data?.error || data?.errores || "Error al guardar",
         color: "red",
         icon: <IconX />,
       });
@@ -126,7 +110,7 @@ export default function EditUsuario() {
   if (loadingData) {
     return (
       <Center style={{ height: "50vh" }}>
-        <Loader size="xl" />
+        <Loader size="xl" color="blue" />
       </Center>
     );
   }
@@ -143,7 +127,7 @@ export default function EditUsuario() {
       </Button>
 
       <Paper withBorder shadow="md" p="xl" radius="md">
-        <Title order={2} mb="lg" align="center">
+        <Title order={2} mb="lg" ta="center">
           {isEditing ? "Editar Usuario / Profesor" : "Nuevo Usuario"}
         </Title>
 

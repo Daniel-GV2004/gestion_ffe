@@ -26,7 +26,7 @@ import {
   getEmpresas,
   getPracticas,
   generarDocumento,
-} from "../../api";
+} from "../../API";
 
 export default function ListRepositorio({ nombreProfesor }) {
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -152,9 +152,9 @@ export default function ListRepositorio({ nombreProfesor }) {
           getPracticas(),
         ]);
 
-        const dataA = await resA.json();
-        const dataE = await resE.json();
-        const dataP = await resP.json();
+        const dataA = resA ? resA.data : [];
+        const dataE = resE ? resE.data : [];
+        const dataP = resP ? resP.data : [];
 
         const arrayAlumnos = Array.isArray(dataA) ? dataA : dataA.alumnos || [];
         setOpcionesAlumnos(
@@ -229,13 +229,7 @@ export default function ListRepositorio({ nombreProfesor }) {
       }
 
       const response = await generarDocumento(bodyData, isFormData);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || "Error al generar el documento");
-      }
-
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -246,7 +240,8 @@ export default function ListRepositorio({ nombreProfesor }) {
       window.URL.revokeObjectURL(url);
       setModalAbierto(false);
     } catch (error) {
-      alert(error.message);
+      console.error(error);
+      alert("Error al generar el documento");
     } finally {
       setLoading(false);
     }

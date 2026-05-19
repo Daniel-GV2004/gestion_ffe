@@ -5,15 +5,14 @@ import {
   Loader,
   Center,
   Title,
-  Text,
   Container,
   Button,
   Group,
-  ActionIcon, // Añadido para el botón
+  ActionIcon,
 } from "@mantine/core";
 import { IconBuildingPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import { getEmpresas } from "../../api";
+import { getEmpresas } from "../../API";
 
 export default function ListEmpresa() {
   const [datos, setDatos] = useState([]);
@@ -22,16 +21,13 @@ export default function ListEmpresa() {
 
   useEffect(() => {
     getEmpresas()
-      .then(async (res) => {
-        if (res && res.ok) {
-          const data = await res.json();
-          setDatos(Array.isArray(data) ? data : []);
-        } else {
-          setDatos([]);
-        }
+      .then((res) => {
+        const data = res.data;
+        setDatos(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error("Error cargando empresas:", err);
+        setDatos([]);
       })
       .finally(() => {
         setLoading(false);
@@ -41,7 +37,7 @@ export default function ListEmpresa() {
   if (loading) {
     return (
       <Center style={{ height: "50vh" }}>
-        <Loader size="xl" />
+        <Loader size="xl" color="blue" />
       </Center>
     );
   }
@@ -54,11 +50,9 @@ export default function ListEmpresa() {
     "nombre_contacto",
   ];
 
-  // CABECERA DE LA TABLA
   const ths = (
     <Table.Tr>
-      <Table.Th style={{ width: 50 }}></Table.Th>{" "}
-      {/* Espacio para el botón de editar */}
+      <Table.Th style={{ width: 50 }}></Table.Th>
       {columnas.map((col) => (
         <Table.Th key={col} style={{ textTransform: "capitalize" }}>
           {col.replace(/_/g, " ")}
@@ -67,14 +61,11 @@ export default function ListEmpresa() {
     </Table.Tr>
   );
 
-  // FILAS DE LA TABLA
   const rows = datos.map((empresa) => {
-    // Rescatamos el ID de la empresa
     const empresaId = empresa.id || empresa._id?.$oid || empresa._id;
 
     return (
       <Table.Tr key={empresaId || empresa.cif}>
-        {/* Celda del botón Editar */}
         <Table.Td>
           <ActionIcon
             variant="subtle"
@@ -85,7 +76,6 @@ export default function ListEmpresa() {
           </ActionIcon>
         </Table.Td>
 
-        {/* Celdas de datos */}
         {columnas.map((col) => (
           <Table.Td key={col}>
             {empresa[col] ? empresa[col].toString() : "-"}
@@ -112,7 +102,7 @@ export default function ListEmpresa() {
         </Button>
       </Group>
 
-      <ScrollArea shadow="xs">
+      <ScrollArea>
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead>{ths}</Table.Thead>
           <Table.Tbody>

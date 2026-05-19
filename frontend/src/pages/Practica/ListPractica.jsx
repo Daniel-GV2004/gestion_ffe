@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 import { IconPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import { getPracticas } from "../../api";
+import { getPracticas } from "../../API";
 
 export default function ListPractica() {
   const [datos, setDatos] = useState([]);
@@ -23,14 +23,14 @@ export default function ListPractica() {
     setLoading(true);
     try {
       const resP = await getPracticas();
-      if (resP && resP.ok) {
-        const dataP = await resP.json();
-        setDatos(Array.isArray(dataP) ? dataP : []);
+      if (resP && resP.data) {
+        setDatos(Array.isArray(resP.data) ? resP.data : []);
       } else {
         setDatos([]);
       }
     } catch (err) {
       console.error(err);
+      setDatos([]);
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function ListPractica() {
         </Button>
       </Group>
 
-      <ScrollArea shadow="xs">
+      <ScrollArea>
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead>
             <Table.Tr>

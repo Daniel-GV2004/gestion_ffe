@@ -8,37 +8,16 @@ from core.utils import token_required
 
 bp = Blueprint('usuario', __name__)
 
-@bp.route('/login', methods=['POST'])
-@token_required
-def login():
-    data = request.get_json()
-    
-    if not data or 'nombre' not in data or 'password' not in data:
-        return jsonify({"error": "Faltan credenciales"}), 400
-
-    user = Usuario.verificar(nombre=data['nombre'], password=data['password'])
-    
-    if user:
-        return jsonify({
-            "mensaje": "Login exitoso",
-            "nombre": user.nombre,
-            "id": str(user.id),
-            "grados": user.grados 
-        }), 200
-    
-    return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
-
-
 @bp.route('/register', methods=['POST'])
 @token_required
-def register():
+def register(current_user_id):
     try:
         data = usuario_schema.load(request.get_json())
         
         user = Usuario.crear(
             nombre=data['nombre'], 
             password=data['password'],
-            grados=data['grados']
+            grados=data.get('grados', [])
         )
         return jsonify({"mensaje": "Usuario creado", "nombre": user.nombre}), 201
         
@@ -52,7 +31,7 @@ def register():
 
 @bp.route('/usuarios', methods=['GET'])
 @token_required
-def get_usuarios():
+def get_usuarios(current_user_id):
     usuarios = Usuario.objects.all()
     result = []
     for u in usuarios:
@@ -65,7 +44,7 @@ def get_usuarios():
 
 @bp.route('/usuarios/<id>', methods=['GET'])
 @token_required
-def get_usuario(id):
+def get_usuario(current_user_id, id):
     try:
         user = Usuario.objects(id=id).first()
         if not user:
@@ -81,7 +60,7 @@ def get_usuario(id):
 
 @bp.route('/usuarios/<id>', methods=['PUT'])
 @token_required
-def update_usuario(id):
+def update_usuario(current_user_id, id):
     data = request.get_json()
     
     try:
@@ -111,7 +90,7 @@ def update_usuario(id):
 
 @bp.route('/usuarios/<id>', methods=['DELETE'])
 @token_required
-def delete_usuario(id):
+def delete_usuario(current_user_id, id):
     try:
         user = Usuario.objects(id=id).first()
         if not user:

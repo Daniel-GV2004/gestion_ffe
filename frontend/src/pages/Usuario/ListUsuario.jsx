@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { IconUserPlus, IconEdit } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import { getUsuarios } from "../../api";
+import { getUsuarios } from "../../API";
 
 export default function Usuarios() {
   const [datos, setDatos] = useState([]);
@@ -24,14 +24,14 @@ export default function Usuarios() {
     setLoading(true);
     try {
       const res = await getUsuarios();
-      if (res && res.ok) {
-        const data = await res.json();
-        setDatos(Array.isArray(data) ? data : []);
+      if (res && res.data) {
+        setDatos(Array.isArray(res.data) ? res.data : []);
       } else {
         setDatos([]);
       }
     } catch (err) {
       console.error("Error cargando usuarios:", err);
+      setDatos([]);
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ export default function Usuarios() {
         </Button>
       </Group>
 
-      <ScrollArea shadow="xs">
+      <ScrollArea>
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead>{ths}</Table.Thead>
           <Table.Tbody>

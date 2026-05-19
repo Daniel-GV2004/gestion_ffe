@@ -12,14 +12,19 @@ import {
   Center,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconCheck, IconX, IconArrowLeft } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconX,
+  IconArrowLeft,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getEmpresa,
   postEmpresa,
   updateEmpresa,
   deleteEmpresa,
-} from "../../api";
+} from "../../API";
 
 export default function EditEmpresa() {
   const navigate = useNavigate();
@@ -57,28 +62,27 @@ export default function EditEmpresa() {
   useEffect(() => {
     if (isEditing) {
       getEmpresa(id)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.error) {
-            form.setValues({
-              nombre_empresa: data.nombre_empresa || "",
-              cif: data.cif || "",
-              email: data.email || "",
-              nombre_contacto: data.nombre_contacto || "",
-              telefono: data.telefono || "",
-              direccion: data.direccion || "",
-              cp: data.cp || "",
-              nombre_tutor_empresa: data.nombre_tutor_empresa || "",
-              apellidos_tutor_empresa: data.apellidos_tutor_empresa || "",
-              email_tutor_empresa: data.email_tutor_empresa || "",
-            });
-          } else {
-            setNotificacion({ type: "error", message: data.error });
-          }
+        .then((res) => {
+          const data = res.data;
+          form.setValues({
+            nombre_empresa: data.nombre_empresa || "",
+            cif: data.cif || "",
+            email: data.email || "",
+            nombre_contacto: data.nombre_contacto || "",
+            telefono: data.telefono || "",
+            direccion: data.direccion || "",
+            cp: data.cp || "",
+            nombre_tutor_empresa: data.nombre_tutor_empresa || "",
+            apellidos_tutor_empresa: data.apellidos_tutor_empresa || "",
+            email_tutor_empresa: data.email_tutor_empresa || "",
+          });
           setLoadingData(false);
         })
         .catch((err) => {
-          setNotificacion({ type: "error", message: "Error al cargar datos" });
+          setNotificacion({
+            type: "error",
+            message: err.response?.data?.error || "Error al cargar datos",
+          });
           setLoadingData(false);
         });
     }
@@ -92,30 +96,24 @@ export default function EditEmpresa() {
     if (!payload.email_tutor_empresa) delete payload.email_tutor_empresa;
 
     try {
-      const response = isEditing
-        ? await updateEmpresa(id, payload)
-        : await postEmpresa(payload);
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setNotificacion({
-          type: "success",
-          message: isEditing
-            ? "Empresa actualizada con éxito"
-            : "Empresa guardada con éxito",
-        });
-        setTimeout(() => navigate("/empresas"), 1500);
+      if (isEditing) {
+        await updateEmpresa(id, payload);
       } else {
-        setNotificacion({
-          type: "error",
-          message: data.error || data.errores || "Error al guardar",
-        });
+        await postEmpresa(payload);
       }
+
+      setNotificacion({
+        type: "success",
+        message: isEditing
+          ? "Empresa actualizada con éxito"
+          : "Empresa guardada con éxito",
+      });
+      setTimeout(() => navigate("/empresas"), 1500);
     } catch (error) {
+      const data = error.response?.data;
       setNotificacion({
         type: "error",
-        message: "No se pudo conectar con el servidor",
+        message: data?.error || data?.errores || "Error al guardar",
       });
     } finally {
       setLoadingSubmit(false);
@@ -133,19 +131,17 @@ export default function EditEmpresa() {
 
     setLoadingSubmit(true);
     try {
-      const response = await deleteEmpresa(id);
-      if (response && response.ok) {
-        setNotificacion({
-          type: "success",
-          message: "Empresa eliminada correctamente",
-        });
-        setTimeout(() => navigate("/empresas"), 1500);
-      } else {
-        setNotificacion({ type: "error", message: "Error al eliminar" });
-        setLoadingSubmit(false);
-      }
+      await deleteEmpresa(id);
+      setNotificacion({
+        type: "success",
+        message: "Empresa eliminada correctamente",
+      });
+      setTimeout(() => navigate("/empresas"), 1500);
     } catch (err) {
-      setNotificacion({ type: "error", message: "Error de conexión" });
+      setNotificacion({
+        type: "error",
+        message: err.response?.data?.error || "Error al eliminar",
+      });
       setLoadingSubmit(false);
     }
   };
@@ -159,20 +155,31 @@ export default function EditEmpresa() {
   }
 
   return (
-    <Container size="sm" py="xl">
-      <Button
-        variant="subtle"
-        leftSection={<IconArrowLeft size={16} />}
-        onClick={() => navigate("/empresas")}
-        mb="md"
-      >
-        Volver al listado
-      </Button>
-
-      <Paper withBorder shadow="md" p="xl" radius="md">
-        <Title order={2} mb="lg" align="center">
-          {isEditing ? "Editar Empresa" : "Registrar Nueva Empresa"}
-        </Title>
+    <Container size="md" py="xl">
+      <Paper withBorder shadow="md" p={30} radius="md">
+        <Group justify="space-between" mb="lg">
+          <Button
+            variant="subtle"
+            leftSection={<IconArrowLeft size={16} />}
+            onClick={() => navigate("/empresas")}
+          >
+            Volver
+          </Button>
+          <Title order={2}>
+            {isEditing ? "Editar Empresa" : "Nueva Empresa"}
+          </Title>
+          {isEditing && (
+            <Button
+              color="red"
+              variant="outline"
+              leftSection={<IconTrash size={16} />}
+              onClick={handleDelete}
+              loading={loadingSubmit}
+            >
+              Eliminar
+            </Button>
+          )}
+        </Group>
 
         {notificacion && (
           <Notification
@@ -185,105 +192,86 @@ export default function EditEmpresa() {
             }
             color={notificacion.type === "success" ? "teal" : "red"}
             title={notificacion.type === "success" ? "Éxito" : "Error"}
-            mb="md"
             onClose={() => setNotificacion(null)}
+            mb="md"
           >
             {notificacion.message}
           </Notification>
         )}
 
         <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Title order={5} mb="sm" c="dimmed">
-            Datos de la Empresa
-          </Title>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md" mb="xl">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
-              label="Nombre de Empresa"
-              placeholder="Ej: Tech Solutions"
+              label="Nombre de la Empresa"
+              placeholder="Ej. Caddie Formación"
               required
               {...form.getInputProps("nombre_empresa")}
             />
             <TextInput
               label="CIF"
-              placeholder="B12345678"
+              placeholder="Ej. B12345678"
               required
               {...form.getInputProps("cif")}
             />
             <TextInput
-              label="Email"
-              placeholder="contacto@tech.com"
+              label="Email General"
+              placeholder="empresa@ejemplo.com"
               required
               {...form.getInputProps("email")}
             />
             <TextInput
+              label="Nombre de Contacto"
+              placeholder="Persona de contacto"
+              {...form.getInputProps("nombre_contacto")}
+            />
+            <TextInput
               label="Teléfono"
-              placeholder="900000000"
+              placeholder="Ej. 600000000"
               {...form.getInputProps("telefono")}
             />
             <TextInput
-              label="Persona de Contacto"
-              placeholder="Nombre del CEO / RRHH"
-              {...form.getInputProps("nombre_contacto")}
-              style={{ gridColumn: "span 2" }}
-            />
-            <TextInput
-              label="Dirección Física"
-              placeholder="Calle Mayor 1"
-              {...form.getInputProps("direccion")}
-            />
-            <TextInput
               label="Código Postal"
-              placeholder="Ej: 47000"
+              placeholder="Ej. 28001"
               {...form.getInputProps("cp")}
             />
           </SimpleGrid>
 
-          <Title order={5} mb="sm" c="dimmed">
-            Datos del Tutor de Empresa
+          <TextInput
+            label="Dirección"
+            placeholder="Calle, Número, Piso"
+            mt="md"
+            {...form.getInputProps("direccion")}
+          />
+
+          <Title order={4} mt="xl" mb="md">
+            Datos del Tutor
           </Title>
+
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
-              label="Nombre Tutor"
-              placeholder="Ej: María"
+              label="Nombre del Tutor"
               {...form.getInputProps("nombre_tutor_empresa")}
             />
             <TextInput
-              label="Apellidos Tutor"
-              placeholder="Ej: López"
+              label="Apellidos del Tutor"
               {...form.getInputProps("apellidos_tutor_empresa")}
             />
             <TextInput
-              label="Email Tutor"
-              placeholder="maria@tech.com"
+              label="Email del Tutor"
+              placeholder="tutor@empresa.com"
               {...form.getInputProps("email_tutor_empresa")}
-              style={{ gridColumn: "span 2" }}
             />
           </SimpleGrid>
 
-          <Group justify={isEditing ? "space-between" : "flex-end"} mt="xl">
-            {isEditing && (
-              <Button
-                variant="outline"
-                color="red"
-                onClick={handleDelete}
-                disabled={loadingSubmit}
-              >
-                Eliminar Empresa
-              </Button>
-            )}
-            <Group>
-              <Button
-                variant="default"
-                onClick={() => form.reset()}
-                disabled={loadingSubmit}
-              >
-                Limpiar
-              </Button>
-              <Button type="submit" loading={loadingSubmit} color="blue">
-                {isEditing ? "Actualizar Empresa" : "Guardar Empresa"}
-              </Button>
-            </Group>
-          </Group>
+          <Button
+            type="submit"
+            fullWidth
+            mt="xl"
+            size="md"
+            loading={loadingSubmit}
+          >
+            {isEditing ? "Actualizar Empresa" : "Guardar Empresa"}
+          </Button>
         </form>
       </Paper>
     </Container>

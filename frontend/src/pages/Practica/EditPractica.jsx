@@ -23,7 +23,7 @@ import {
   postPractica,
   updatePractica,
   deletePractica,
-} from "../../api";
+} from "../../API";
 
 export default function EditPractica() {
   const navigate = useNavigate();
@@ -60,8 +60,8 @@ export default function EditPractica() {
       try {
         const [resA, resE] = await Promise.all([getAlumnos(), getEmpresas()]);
 
-        const dataA = resA && resA.ok ? await resA.json() : [];
-        const dataE = resE && resE.ok ? await resE.json() : [];
+        const dataA = resA ? resA.data : [];
+        const dataE = resE ? resE.data : [];
 
         const arrayAlumnos = Array.isArray(dataA) ? dataA : dataA.alumnos || [];
         setOpcionesAlumnos(
@@ -95,49 +95,46 @@ export default function EditPractica() {
 
         if (isEditing) {
           const resP = await getPractica(id);
+          const dataP = resP.data;
 
-          if (resP && resP.ok) {
-            const dataP = await resP.json();
+          if (dataP && !dataP.error) {
+            const extraerId = (campo) => {
+              if (!campo) return "";
+              if (typeof campo === "object") {
+                return String(campo.id || campo._id?.$oid || campo._id || "");
+              }
+              return String(campo);
+            };
 
-            if (!dataP.error) {
-              const extraerId = (campo) => {
-                if (!campo) return "";
-                if (typeof campo === "object") {
-                  return String(campo.id || campo._id?.$oid || campo._id || "");
-                }
-                return String(campo);
-              };
+            const idAlumno = extraerId(dataP.alumno);
+            const idEmpresa = extraerId(dataP.empresa);
 
-              const idAlumno = extraerId(dataP.alumno);
-              const idEmpresa = extraerId(dataP.empresa);
+            const formatoFecha = (fecha) =>
+              fecha ? new Date(fecha).toISOString().substring(0, 10) : "";
 
-              const formatoFecha = (fecha) =>
-                fecha ? new Date(fecha).toISOString().substring(0, 10) : "";
-
-              form.setValues({
-                alumno: idAlumno,
-                empresa: idEmpresa,
-                fecha_inicio: formatoFecha(dataP.fecha_inicio),
-                fecha_fin: formatoFecha(dataP.fecha_fin),
-                horas_totales: dataP.horas_totales || 0,
-                ciclo: dataP.ciclo || "",
-                curso: dataP.curso || "",
-                y_academico: dataP.y_academico || "",
-              });
-            } else {
-              notifications.show({
-                title: "Error",
-                message: "No se pudo cargar la práctica",
-                color: "red",
-                icon: <IconX />,
-              });
-            }
+            form.setValues({
+              alumno: idAlumno,
+              empresa: idEmpresa,
+              fecha_inicio: formatoFecha(dataP.fecha_inicio),
+              fecha_fin: formatoFecha(dataP.fecha_fin),
+              horas_totales: dataP.horas_totales || 0,
+              ciclo: dataP.ciclo || "",
+              curso: dataP.curso || "",
+              y_academico: dataP.y_academico || "",
+            });
+          } else {
+            notifications.show({
+              title: "Error",
+              message: "No se pudo cargar la práctica",
+              color: "red",
+              icon: <IconX />,
+            });
           }
         }
       } catch (error) {
         notifications.show({
           title: "Error de conexión",
-          message: "Error al descargar datos",
+          message: error.response?.data?.error || "Error al descargar datos",
           color: "red",
           icon: <IconX />,
         });
@@ -153,34 +150,25 @@ export default function EditPractica() {
   const handleSubmit = async (values) => {
     setLoadingSubmit(true);
     try {
-      const response = isEditing
-        ? await updatePractica(id, values)
-        : await postPractica(values);
-
-      const data = await response.json();
-
-      if (response && response.ok) {
-        notifications.show({
-          title: "¡Éxito!",
-          message: isEditing
-            ? "Práctica actualizada"
-            : "Práctica asignada correctamente",
-          color: "teal",
-          icon: <IconCheck />,
-        });
-        setTimeout(() => navigate("/practicas"), 1500);
+      if (isEditing) {
+        await updatePractica(id, values);
       } else {
-        notifications.show({
-          title: "Error",
-          message: data.error || "Revisa los datos",
-          color: "red",
-          icon: <IconX />,
-        });
+        await postPractica(values);
       }
+
+      notifications.show({
+        title: "¡Éxito!",
+        message: isEditing
+          ? "Práctica actualizada"
+          : "Práctica asignada correctamente",
+        color: "teal",
+        icon: <IconCheck />,
+      });
+      setTimeout(() => navigate("/practicas"), 1500);
     } catch (error) {
       notifications.show({
         title: "Error",
-        message: "Error de conexión con el servidor",
+        message: error.response?.data?.error || "Revisa los datos",
         color: "red",
         icon: <IconX />,
       });
@@ -194,29 +182,19 @@ export default function EditPractica() {
 
     setLoadingSubmit(true);
     try {
-      const response = await deletePractica(id);
+      await deletePractica(id);
 
-      if (response && response.ok) {
-        notifications.show({
-          title: "Eliminada",
-          message: "Práctica eliminada correctamente",
-          color: "teal",
-          icon: <IconCheck />,
-        });
-        setTimeout(() => navigate("/practicas"), 1500);
-      } else {
-        notifications.show({
-          title: "Error",
-          message: "No se pudo eliminar",
-          color: "red",
-          icon: <IconX />,
-        });
-        setLoadingSubmit(false);
-      }
+      notifications.show({
+        title: "Eliminada",
+        message: "Práctica eliminada correctamente",
+        color: "teal",
+        icon: <IconCheck />,
+      });
+      setTimeout(() => navigate("/practicas"), 1500);
     } catch (err) {
       notifications.show({
         title: "Error",
-        message: "Error de conexión",
+        message: err.response?.data?.error || "No se pudo eliminar",
         color: "red",
         icon: <IconX />,
       });
@@ -244,7 +222,7 @@ export default function EditPractica() {
       </Button>
 
       <Paper withBorder shadow="md" p="xl" radius="md">
-        <Title order={2} mb="lg" align="center">
+        <Title order={2} mb="lg" ta="center">
           {isEditing ? "Editar Práctica" : "Asignar Nueva Práctica"}
         </Title>
 
