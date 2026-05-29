@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: crm_mongodb
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build: ./backend_flask
+    container_name: crm_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/gestion_ffe
+      - SECRET_KEY=tu_clave_super_secreta_aqui_12345
+    depends_on:
+      - mongodb
+
+  frontend:
+    build: ./frontend
+    container_name: crm_frontend
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
