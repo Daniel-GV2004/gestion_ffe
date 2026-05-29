@@ -1,13 +1,6 @@
 version: "3.8"
 
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: crm_mongodb
-    restart: unless-stopped
-    volumes:
-      - mongo_data:/data/db
-
   backend:
     build: ./backend_flask
     container_name: crm_backend
