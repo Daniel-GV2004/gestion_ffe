@@ -18,7 +18,7 @@ CORS(app)
 
 app.config['SECRET_KEY'] = SECRET_KEY
 
-load_dotenv()
+load_dotenv("./.env")
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/gestion_ffe")
 connect(host=MONGO_URI)
 
