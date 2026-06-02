@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:admin@192.168.0.100:27017/gestion_ffe")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:admin@192.168.0.100:27017/gestion_ffe?authSource=admin")
 DATABASE_NAME = "gestion_ffe"
 
 try:
