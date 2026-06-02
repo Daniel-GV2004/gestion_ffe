@@ -1,0 +1,24 @@
+name: CI/CD Deploy to Raspberry Pi
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Docker Containers
+        run: |
+          echo "Deteniendo contenedores antiguos"
+          docker compose down
+          
+          echo "Limpiando imágenes y caché residual"
+          docker system prune -af
+          
+          echo "Levantando la nueva versión"
+          docker compose up -d --build
