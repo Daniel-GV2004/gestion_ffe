@@ -10,6 +10,8 @@ import {
   Paper,
   Loader,
   Center,
+  Modal,
+  Text,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
@@ -17,10 +19,17 @@ import {
   IconX,
   IconArrowLeft,
   IconCertificate,
+  IconTrash,
 } from "@tabler/icons-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
-import { getUsuario, registerUsuario, updateUsuario } from "../../API";
+import { useDisclosure } from "@mantine/hooks";
+import {
+  getUsuario,
+  registerUsuario,
+  updateUsuario,
+  deleteUsuario,
+} from "../../API";
 
 export default function EditUsuario() {
   const navigate = useNavigate();
@@ -29,6 +38,11 @@ export default function EditUsuario() {
 
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditing);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+
+  // Control para el modal de confirmación de borrado
+  const [openedConfirm, { open: openConfirm, close: closeConfirm }] =
+    useDisclosure(false);
 
   const opcionesGrados = [
     { value: "DAM", label: "DAM - Aplicaciones Multiplataforma" },
@@ -96,14 +110,45 @@ export default function EditUsuario() {
       setTimeout(() => navigate("/usuarios"), 1500);
     } catch (error) {
       const data = error.response?.data;
+      let mensajeError = data?.error || data?.errores || "Error al guardar";
+
+      if (typeof mensajeError === "object" && mensajeError !== null) {
+        mensajeError = Object.values(mensajeError).join(" | ");
+      }
+
       notifications.show({
         title: "Error",
-        message: data?.error || data?.errores || "Error al guardar",
+        message: mensajeError,
         color: "red",
         icon: <IconX />,
       });
     } finally {
       setLoadingSubmit(false);
+    }
+  };
+
+  const handleEliminar = async () => {
+    setLoadingDelete(true);
+    try {
+      await deleteUsuario(id);
+      notifications.show({
+        title: "Eliminado",
+        message: "El usuario ha sido eliminado correctamente",
+        color: "teal",
+        icon: <IconCheck />,
+      });
+      closeConfirm();
+      navigate("/usuarios");
+    } catch (error) {
+      const data = error.response?.data;
+      notifications.show({
+        title: "Error al eliminar",
+        message: data?.error || "No se pudo eliminar el usuario",
+        color: "red",
+        icon: <IconX />,
+      });
+    } finally {
+      setLoadingDelete(false);
     }
   };
 
@@ -163,13 +208,53 @@ export default function EditUsuario() {
             clearable
           />
 
-          <Group justify="flex-end" mt="xl">
+          {/* Justificamos con space-between si estamos editando para separar Eliminar de Guardar */}
+          <Group justify={isEditing ? "space-between" : "flex-end"} mt="xl">
+            {isEditing && (
+              <Button
+                type="button"
+                color="red"
+                variant="outline"
+                leftSection={<IconTrash size={16} />}
+                onClick={openConfirm}
+              >
+                Eliminar Usuario
+              </Button>
+            )}
+
             <Button type="submit" loading={loadingSubmit} color="blue">
               {isEditing ? "Actualizar Datos" : "Crear Usuario"}
             </Button>
           </Group>
         </form>
       </Paper>
+
+      {/* Modal de Confirmación de Borrado */}
+      <Modal
+        opened={openedConfirm}
+        onClose={closeConfirm}
+        title={<Text fw={700}>¿Confirmar eliminación?</Text>}
+        centered
+        size="sm"
+      >
+        <Text size="sm" mb="lg">
+          ¿Estás seguro de que deseas eliminar permanentemente al usuario{" "}
+          <b>{form.values.nombre}</b>? Esta acción no se puede deshacer.
+        </Text>
+
+        <Group justify="flex-end">
+          <Button
+            variant="default"
+            onClick={closeConfirm}
+            disabled={loadingDelete}
+          >
+            Cancelar
+          </Button>
+          <Button color="red" onClick={handleEliminar} loading={loadingDelete}>
+            Eliminar definitivamente
+          </Button>
+        </Group>
+      </Modal>
     </Container>
   );
 }
