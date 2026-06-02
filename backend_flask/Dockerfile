@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-COPY /var/crm_ffe/.env ./
+COPY ./env ./
 
 COPY . .
 
