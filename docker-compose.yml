@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
+    env_file:
+      - /var/www/.env
     environment:
       - MONGO_URI=mongodb://admin:admin@192.168.0.100:27017/gestion_ffe?authSource=admin
       - SECRET_KEY=6df26d0cc6e2debe05809832a029ad8c80eab3b1da9d66d0af87881ce3369092
