@@ -99,7 +99,7 @@ const Inicio = ({ user }) => {
       descripcion: formData.descripcion,
       fecha: formatearFechaLocal(formData.fecha),
       fecha_fin: formData.fecha_fin
-        ? formatearFechaLocal(formData.formData.fecha_fin)
+        ? formatearFechaLocal(formData.fecha_fin)
         : null,
     };
 
