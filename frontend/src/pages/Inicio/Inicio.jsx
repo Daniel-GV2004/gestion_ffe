@@ -83,13 +83,23 @@ const Inicio = ({ user }) => {
     open();
   };
 
+  const formatearFechaLocal = (fechaSeleccionada) => {
+    if (!fechaSeleccionada) return null;
+    const dateObj = new Date(fechaSeleccionada);
+    const tzoffset = dateObj.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(dateObj.getTime() - tzoffset)
+      .toISOString()
+      .slice(0, -1);
+    return localISOTime;
+  };
+
   const handleSave = async () => {
     const payload = {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
-      fecha: formData.fecha ? new Date(formData.fecha).toISOString() : null,
+      fecha: formatearFechaLocal(formData.fecha),
       fecha_fin: formData.fecha_fin
-        ? new Date(formData.fecha_fin).toISOString()
+        ? formatearFechaLocal(formData.formData.fecha_fin)
         : null,
     };
 
