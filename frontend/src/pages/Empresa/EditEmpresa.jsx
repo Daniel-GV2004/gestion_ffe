@@ -43,7 +43,7 @@ export default function EditEmpresa() {
       nombre_contacto: "",
       telefono: "",
       direccion: "",
-      cp: "",
+      cp: "", // Se mantiene vacío por defecto como string plano
       nombre_tutor_empresa: "",
       apellidos_tutor_empresa: "",
       email_tutor_empresa: "",
@@ -54,6 +54,9 @@ export default function EditEmpresa() {
         value.length < 2 ? "El nombre es muy corto" : null,
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Email inválido"),
       cif: (value) => (value.length < 9 ? "CIF incompleto" : null),
+      // Validación estricta para que el código postal sea solo numérico (ej: 5 dígitos en España)
+      cp: (value) => 
+        value && !/^\d+$/.test(value) ? "El código postal debe contener solo números" : null,
       email_tutor_empresa: (value) =>
         value && !/^\S+@\S+$/.test(value) ? "Email inválido" : null,
     },
@@ -64,6 +67,13 @@ export default function EditEmpresa() {
       getEmpresa(id)
         .then((res) => {
           const data = res.data;
+          
+          // CORRECCIÓN DE ENTRADA: Nos aseguramos de desestructurar o limpiar si el backend enviara un array por error residual
+          let cpLimpio = "";
+          if (data.cp) {
+            cpLimpio = Array.isArray(data.cp) ? String(data.cp[0]) : String(data.cp);
+          }
+
           form.setValues({
             nombre_empresa: data.nombre_empresa || "",
             cif: data.cif || "",
@@ -71,7 +81,7 @@ export default function EditEmpresa() {
             nombre_contacto: data.nombre_contacto || "",
             telefono: data.telefono || "",
             direccion: data.direccion || "",
-            cp: data.cp || "",
+            cp: cpLimpio,
             nombre_tutor_empresa: data.nombre_tutor_empresa || "",
             apellidos_tutor_empresa: data.apellidos_tutor_empresa || "",
             email_tutor_empresa: data.email_tutor_empresa || "",
@@ -92,7 +102,12 @@ export default function EditEmpresa() {
     setLoadingSubmit(true);
     setNotificacion(null);
 
-    const payload = { ...values };
+    // CORRECCIÓN DE SALIDA: Nos aseguramos al 100% de que 'cp' sea un string numérico limpio
+    const payload = { 
+      ...values,
+      cp: values.cp ? String(values.cp).trim() : "" 
+    };
+    
     if (!payload.email_tutor_empresa) delete payload.email_tutor_empresa;
 
     try {
@@ -111,7 +126,6 @@ export default function EditEmpresa() {
       setTimeout(() => navigate("/empresas"), 1500);
     } catch (error) {
       const data = error.response?.data;
-
       let mensajeError = data?.error || data?.errores || "Error al guardar";
 
       if (typeof mensajeError === "object" && mensajeError !== null) {
@@ -239,6 +253,7 @@ export default function EditEmpresa() {
             <TextInput
               label="Código Postal"
               placeholder="Ej. 28001"
+              maxLength={5} // Limita visualmente la entrada a la longitud estándar de CP
               {...form.getInputProps("cp")}
             />
           </SimpleGrid>
