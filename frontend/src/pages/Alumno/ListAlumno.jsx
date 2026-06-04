@@ -100,7 +100,7 @@ export default function Alumnos() {
         h={500}
         onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
       >
-        <Table striped highlightOnHover>
+        <Table striped highlightOnHover withTableBorder>
           <Table.Thead>{ths}</Table.Thead>
           <Table.Tbody>
             {rows.length > 0 ? (
