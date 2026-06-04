@@ -45,6 +45,7 @@ export default function ListEmpresa() {
   const columnas = [
     "cif",
     "nombre_empresa",
+    "codigo_acuerdo",
     "email",
     "telefono",
     "nombre_contacto",
