@@ -24,6 +24,7 @@ import {
   updatePractica,
   deletePractica,
 } from "../../API";
+import { OPCIONES_GRADOS, CURSOS_PRACTICAS } from "../../../constants.js";
 
 export default function EditPractica() {
   const navigate = useNavigate();
@@ -269,14 +270,18 @@ export default function EditPractica() {
             />
 
             <Group grow>
-              <TextInput
+              <Select
                 label="Ciclo"
-                placeholder="Escribe el ciclo"
+                placeholder="Selecciona el ciclo"
+                data={OPCIONES_GRADOS}
+                required
                 {...form.getInputProps("ciclo")}
               />
-              <TextInput
+              <Select
                 label="Curso"
-                placeholder="Ej: Primero o Segundo"
+                placeholder="Selecciona el curso"
+                data={CURSOS_PRACTICAS}
+                required
                 {...form.getInputProps("curso")}
               />
             </Group>
