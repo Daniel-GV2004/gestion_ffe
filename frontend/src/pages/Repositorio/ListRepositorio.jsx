@@ -65,6 +65,7 @@ export default function ListRepositorio({ nombreProfesor }) {
       reqAlumno: false,
       reqEmpresa: false,
       reqPractica: true,
+      esMulti: true,
     },
     {
       id: "Anexo II Plan formativo",
